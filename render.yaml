@@ -1,0 +1,115 @@
+# Render Blueprint for Oweza
+# This file defines all services for automatic deployment
+# Deploy: Connect your GitHub repo to Render and it will auto-detect this file
+
+services:
+  # Main API Service
+  - type: web
+    name: oweza-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run server:build
+    startCommand: npm run server:start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CELO_CHAIN_ID
+        value: 11142220
+      - key: CELO_RPC_URL
+        value: https://forno.celo-sepolia.celo-testnet.org
+      - key: CUSD_TOKEN_ADDRESS
+        value: 0xA99dC247d6b7B2E3ab48a1fEE101b83cD6aCd82a
+      - key: CUSD_DECIMALS
+        value: 18
+      - key: CELO_SEPOLIA_RPC_URL
+        value: https://forno.celo-sepolia.celo-testnet.org
+      - key: MONGODB_URI
+        sync: false # Set in Render dashboard: mongodb+srv://leprofcode_db_user:vygzcr0L235Iop5M@cluster0.c0iznmv.mongodb.net/metasend
+      - key: REOWN_PROJECT_ID
+        value: e3cdce8b52918105b472fccabf0ba198
+      - key: OWEZA_API_KEY
+        sync: false # Set in Render dashboard: ow_live_404f4e48f9c6301b01a55f02177dc5f46af6f2f9872dd07532b0919fa8230285
+      - key: CRON_SECRET
+        sync: false # Set in Render dashboard: 18234f50059e5522fb664b86fd59a8b90c227b744f37274fa3d09cfe489decaa
+      - key: RESEND_API_KEY
+        sync: false # Set in Render dashboard: re_CNJF1edc_GtVPYZhxPyXXqKE7MLL6GCMf
+      - key: SUPPORT_EMAIL
+        value: noreply@kellon.xyz
+      - key: ESCROW_CONTRACT_ADDRESS
+        value: 0x89056f123C0C274Ad2Ae15E3d513064b0b5211c0
+      - key: ESCROW_TREASURY_WALLET
+        value: 0x9fa9C08Bb83cf70774fd38Ee638ad98D4B6CBDCf
+      - key: ESCROW_TOKEN_ADDRESS
+        value: 0xA99dC247d6b7B2E3ab48a1fEE101b83cD6aCd82a
+      - key: ESCROW_NETWORK
+        value: celo-sepolia
+      - key: ESCROW_RPC_URL
+        value: https://forno.celo-sepolia.celo-testnet.org
+      - key: ESCROW_SALT_VERSION
+        value: OW_ESCROW_V1
+      - key: ESCROW_EXPIRY_SECONDS
+        value: 604800
+      - key: ESCROW_USE_MOCK
+        value: false
+      - key: PENDING_TRANSFER_EXPIRY_DAYS
+        value: 7
+      - key: EMAIL_LOOKUP_RATE_LIMIT
+        value: 100
+      - key: SEND_RATE_LIMIT
+        value: 20
+      - key: INVITE_RATE_LIMIT
+        value: 10
+
+  # Cron Job: Process Expired Transfers
+  - type: cron
+    name: oweza-cron-expiry
+    env: node
+    region: oregon
+    plan: free
+    schedule: "0 */6 * * *" # Every 6 hours
+    buildCommand: npm install
+    startCommand: node -e "require('./api/cron/process-expiry').handler()"
+    envVars:
+      - fromService:
+          type: web
+          name: oweza-api
+          envVarKey: MONGODB_URI
+      - fromService:
+          type: web
+          name: oweza-api
+          envVarKey: CRON_SECRET
+      - key: ESCROW_CONTRACT_ADDRESS
+        value: 0x89056f123C0C274Ad2Ae15E3d513064b0b5211c0
+      - key: ESCROW_TREASURY_WALLET
+        value: 0x9fa9C08Bb83cf70774fd38Ee638ad98D4B6CBDCf
+      - key: CELO_RPC_URL
+        value: https://forno.celo-sepolia.celo-testnet.org
+
+  # Cron Job: Send Reminder Emails
+  - type: cron
+    name: oweza-cron-reminders
+    env: node
+    region: oregon
+    plan: free
+    schedule: "0 12 * * *" # Daily at noon
+    buildCommand: npm install
+    startCommand: node -e "require('./api/cron/send-reminders').handler()"
+    envVars:
+      - fromService:
+          type: web
+          name: oweza-api
+          envVarKey: MONGODB_URI
+      - fromService:
+          type: web
+          name: oweza-api
+          envVarKey: CRON_SECRET
+      - fromService:
+          type: web
+          name: oweza-api
+          envVarKey: RESEND_API_KEY
+      - fromService:
+          type: web
+          name: oweza-api
+          envVarKey: SUPPORT_EMAIL

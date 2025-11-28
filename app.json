@@ -1,0 +1,86 @@
+{
+  "expo": {
+    "name": "Oweza",
+    "slug": "oweza",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/AppIcons/appstore.png",
+    "scheme": "oweza",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kellonapp.oweza",
+      "associatedDomains": [
+        "applinks:oweza.vercel.app"
+      ],
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Oweza uses your location to show region-specific payment providers like Paycrest for African users."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/AppIcons/playstore.png",
+        "backgroundColor": "#ffffff",
+        "monochromeImage": "./assets/AppIcons/playstore.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "oweza"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "https",
+              "host": "oweza.vercel.app",
+              "pathPrefix": "/claim"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
+      "package": "com.kellonapp.oweza"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Oweza uses your location to show region-specific payment providers like Paycrest for African users."
+        }
+      ]
+    ],
+    "extra": {
+      "appUrl": "https://oweza.vercel.app",
+      "owezaApiBaseUrl": "http://10.0.2.2:3000",
+      "CELO_EXPLORER_URL": "https://celo-sepolia.blockscout.com"
+    }
+  }
+}

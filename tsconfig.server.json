@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020", "DOM"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": false,
+    "alwaysStrict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": false,
+    "outDir": "./dist"
+  },
+  "include": ["server.ts", "api/**/*", "src/services/mongoDatabase.ts", "src/services/PendingTransferService.ts", "src/services/UserDirectoryService.ts", "src/services/EscrowService.ts", "src/services/server/**/*", "src/services/EmailNotificationService.ts", "src/services/BackgroundTaskService.ts", "src/services/CryptoGiftService.ts", "src/services/InvoiceService.ts", "src/services/PaymentRequestService.ts", "src/services/TippingService.ts", "src/types/**/*"],
+  "exclude": ["node_modules", "dist", "android", "ios", "src/screens/**/*", "src/components/**/*", "src/navigation/**/*", "src/providers/**/*", "src/config/**/*", "src/constants/**/*", "src/services/coinbase.ts", "src/services/blockchain.ts", "src/services/transfers.ts", "src/services/ramp.ts", "src/services/location.ts", "src/services/notifications.ts", "src/services/addressResolution.ts", "src/services/gifts.ts", "src/services/invoices.ts", "src/services/paymentRequests.ts", "src/services/tipping.ts", "src/services/database.native.ts", "src/services/database.ts"]
+}

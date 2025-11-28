@@ -1,0 +1,70 @@
+# Dependencies
+node_modules
+
+# Build outputs
+android
+ios
+.expo
+dist
+web-build
+build
+
+# React Native
+.kotlin
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# Environment
+.env
+.env*.local
+
+# IDE
+.vscode
+.idea
+
+# Git
+.git
+.gitignore
+
+# Misc
+server.ts
+tsconfig.server.json
+*.md
+README.md
+package-lock.json
+
+# Backend API files (Render only - they import from src/)
+api/gifts.ts
+api/health.ts
+api/invoices.ts
+api/payment-requests.ts
+api/pending-transfers.ts
+api/send-email.ts
+api/tips.ts
+api/transfers.ts
+api/users.ts
+api/cron/
+api/international/
+api-express/

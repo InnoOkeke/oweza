@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID.com.kellonapp.metasend",
+        "paths": [
+          "/claim/*",
+          "/send/*",
+          "/wallet/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "TEAM_ID.com.kellonapp.metasend"
+    ]
+  }
+}
