@@ -320,11 +320,6 @@ class MongoDatabase {
 
   // Payment Request operations removed - use invoices instead
   // Invoices provide better functionality for requesting payments
-      { $set: updates },
-      { returnDocument: "after" }
-    );
-    return result || null;
-  }
 
   // Tip Jar operations
   async createTipJar(jar: any): Promise<any> {
