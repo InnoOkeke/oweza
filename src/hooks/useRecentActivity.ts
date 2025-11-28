@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { listTransfers, TransferRecord } from '../services/transfers';
 import { getTips, Tip } from '../services/tipping';
 import { getCryptoGifts, CryptoGift } from '../services/gifts';
-import { getPaymentRequests, PaymentRequest } from '../services/paymentRequests';
 import { getInvoices, Invoice } from '../services/invoices';
 import { getCusdTransactions, BlockchainTransaction } from '../services/blockchain';
 import { useAuth } from '../providers/AppKitProvider';
@@ -15,8 +14,6 @@ export type ActivityType =
     | 'tip-received'
     | 'gift-sent'
     | 'gift-received'
-    | 'payment-request-paid'
-    | 'payment-request-received'
     | 'invoice-sent'
     | 'invoice-received'
     | 'blockchain-sent'
@@ -75,12 +72,7 @@ export function useRecentActivity() {
         enabled: !!email,
     });
 
-    // 4. Payment Requests
-    const { data: paymentRequests = [] } = useQuery({
-        queryKey: ['paymentRequests', email],
-        queryFn: () => email ? getPaymentRequests(email) : [],
-        enabled: !!email,
-    });
+    // 4. Invoices (replaces payment requests)
 
     // 5. Invoices
     const { data: invoices = [] } = useQuery({
@@ -347,7 +339,7 @@ export function useRecentActivity() {
             return [noActivityItem];
         }
         return sorted;
-    }, [transfers, tips, gifts, paymentRequests, invoices, blockchainTxs, walletAddress, email, profile]);
+    }, [transfers, tips, gifts, invoices, blockchainTxs, walletAddress, email, profile]);
 
     return { activities };
 }

@@ -62,7 +62,7 @@ export const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = (
     }
 
     // For tip, pay, gift, follow same routine
-    if (['tip-sent', 'tip-received', 'gift-sent', 'gift-received', 'payment-request-paid', 'payment-request-received'].includes(transaction.type)) {
+    if (['tip-sent', 'tip-received', 'gift-sent', 'gift-received', 'invoice-sent', 'invoice-received'].includes(transaction.type)) {
         if (isReceived) {
             detailsLabel = 'From';
             detailsValue = transaction.metadata?.from || 'Unknown Sender';
@@ -80,8 +80,8 @@ export const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = (
             case 'tip-sent':
             case 'tip-received':
                 return '💸';
-            case 'payment-request-paid':
-            case 'payment-request-received':
+            case 'invoice-sent':
+            case 'invoice-received':
                 return '📄';
             default:
                 return isReceived ? '⬇️' : '↗️';

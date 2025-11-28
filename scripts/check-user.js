@@ -6,7 +6,7 @@ if (!email) {
   process.exit(1);
 }
 
-const baseUrl = process.env.METASEND_API_BASE_URL || "https://metasend.vercel.app";
+const baseUrl = process.env.OWEZA_API_BASE_URL || "https://oweza-api.onrender.com";
 const apiKey = process.env.METASEND_API_KEY;
 
 if (!apiKey) {

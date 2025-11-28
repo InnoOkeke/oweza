@@ -82,38 +82,6 @@ export type TransferNotification = {
   createdAt: string;
 };
 
-export type PaymentRequestStatus = "pending" | "paid" | "cancelled" | "expired";
-
-export type PaymentRequest = {
-  requestId: string;
-  creatorUserId: string;
-  creatorEmail: string;
-  creatorName?: string;
-
-  // Request details
-  amount: string;
-  token: string;
-  chain: ChainType;
-  description: string;
-
-  // Payer info
-  payerEmail?: string;
-  payerUserId?: string;
-  payerName?: string;
-
-  // Status
-  status: PaymentRequestStatus;
-
-  // Payment info
-  paidAt?: string;
-  transactionHash?: string;
-
-  // Metadata
-  createdAt: string;
-  expiresAt?: string;
-  metadata?: Record<string, any>;
-};
-
 export type TipJarStatus = "active" | "paused" | "closed";
 
 export type TipJar = {

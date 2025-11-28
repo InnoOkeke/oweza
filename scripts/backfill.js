@@ -67,7 +67,7 @@ const main = async () => {
   const env = loadEnv();
   const fetchImpl = ensureFetch();
 
-  const apiBaseUrl = env.METASEND_API_BASE_URL || "https://metasend.vercel.app";
+  const apiBaseUrl = env.OWEZA_API_BASE_URL || "https://oweza-api.onrender.com";
   const apiKey = env.METASEND_API_KEY;
 
   if (!apiKey) {

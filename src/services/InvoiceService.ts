@@ -188,7 +188,7 @@ class InvoiceService {
    * Generate shareable invoice link
    */
   generateInvoiceLink(invoiceId: string): string {
-    return `https://metasend.vercel.app/invoice/${invoiceId}`;
+    return `https://oweza-api.onrender.com/invoice/${invoiceId}`;
   }
 
   /**

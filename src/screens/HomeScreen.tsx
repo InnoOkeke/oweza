@@ -458,8 +458,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     switch (item.type) {
       case 'gift-sent': icon = <Text style={{ fontSize: 20 }}>🎁</Text>; break;
       case 'tip-sent': icon = <Text style={{ fontSize: 20 }}>💸</Text>; break;
-      case 'payment-request-paid': icon = <Text style={{ fontSize: 20 }}>📄</Text>; break;
-      case 'payment-request-received': icon = <Text style={{ fontSize: 20 }}>📄</Text>; break;
+      case 'invoice-sent': icon = <Text style={{ fontSize: 20 }}>📄</Text>; break;
+      case 'invoice-received': icon = <Text style={{ fontSize: 20 }}>📄</Text>; break;
       case 'blockchain-received': icon = <Text style={{ fontSize: 20 }}>💰</Text>; break;
       case 'blockchain-sent': icon = <Text style={{ fontSize: 20 }}>↗️</Text>; break;
       case 'transfer-sent': icon = <Text style={{ fontSize: 20 }}>📧</Text>; break;

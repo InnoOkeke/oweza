@@ -287,7 +287,7 @@ class CryptoGiftService {
    * Generate shareable gift link
    */
   generateGiftLink(giftId: string): string {
-    return `https://metasend.vercel.app/gift/${giftId}`;
+    return `https://oweza-api.onrender.com/gift/${giftId}`;
   }
 }
 

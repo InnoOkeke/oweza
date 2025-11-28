@@ -258,8 +258,7 @@ export const TransactionHistoryScreen: React.FC<Props> = ({ navigation }) => {
     return activities.filter(item => {
       if (activeTab === "sent") {
         return item.type.endsWith("-sent") ||
-          item.type === "payment-request-received" || // I created request -> I sent request
-          item.type === "payment-request-paid";     // I paid request -> I sent money
+          item.type === "invoice-sent";     // I sent invoice
       }
 
       if (activeTab === "received") {
@@ -287,7 +286,8 @@ export const TransactionHistoryScreen: React.FC<Props> = ({ navigation }) => {
       case 'gift-received': icon = <Text style={{ fontSize: 20 }}>🎁</Text>; break;
       case 'tip-sent':
       case 'tip-received': icon = <Text style={{ fontSize: 20 }}>💸</Text>; break;
-      case 'payment-request-paid':
+      case 'invoice-sent':
+      case 'invoice-received':
       case 'payment-request-received': icon = <Text style={{ fontSize: 20 }}>📄</Text>; break;
       case 'blockchain-received': icon = <Text style={{ fontSize: 20 }}>💰</Text>; break;
       case 'blockchain-sent': icon = <Text style={{ fontSize: 20 }}>↗️</Text>; break;

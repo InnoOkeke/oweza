@@ -46,7 +46,6 @@ artifacts/
 cache/
 hardhat-dist/
 typechain-types/
-.vercel
 .github
 
 # Test files with sensitive data

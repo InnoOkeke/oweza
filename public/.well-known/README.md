@@ -29,16 +29,16 @@ For production builds, use the fingerprint from your release keystore.
 
 ## Testing Deep Links
 
-After deploying to Vercel:
+After deploying to Render:
 
 **iOS:**
 ```
-https://metasend.vercel.app/.well-known/apple-app-site-association
+https://oweza-api.onrender.com/.well-known/apple-app-site-association
 ```
 
 **Android:**
 ```
-https://metasend.vercel.app/.well-known/assetlinks.json
+https://oweza-api.onrender.com/.well-known/assetlinks.json
 ```
 
 Both files must be served with `Content-Type: application/json`.

@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 // Load environment variables
 dotenv.config();
@@ -13,21 +12,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Helper to convert Express to Vercel format
-const adaptVercelHandler = (handler: (req: VercelRequest, res: VercelResponse) => Promise<any>) => {
-  return async (req: express.Request, res: express.Response) => {
-    const vercelReq = req as unknown as VercelRequest;
-    const vercelRes = res as unknown as VercelResponse;
-    await handler(vercelReq, vercelRes);
-  };
-};
-
-// Import Vercel handlers
+// Import API handlers
 import pendingTransfersHandler from './api/pending-transfers';
 import giftsHandler from './api/gifts';
 import healthHandler from './api/health';
 import invoicesHandler from './api/invoices';
-import paymentRequestsHandler from './api/payment-requests';
 import sendEmailHandler from './api/send-email';
 import tipsHandler from './api/tips';
 import transfersHandler from './api/transfers';
@@ -44,7 +33,6 @@ app.use('/api/pending-transfers', pendingTransfersHandler);
 app.all('/api/gifts', adaptVercelHandler(giftsHandler));
 app.all('/api/health', adaptVercelHandler(healthHandler));
 app.use('/api/invoices', invoicesHandler);
-app.use('/api/payment-requests', paymentRequestsHandler);
 app.use('/api/send-email', sendEmailHandler);
 app.use('/api/tips', tipsHandler);
 app.use('/api/transfers', transfersHandler);

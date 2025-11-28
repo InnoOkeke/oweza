@@ -186,7 +186,7 @@ export const RootNavigator: React.FC = () => {
     <NavigationContainer
       theme={navigationTheme}
       linking={{
-        prefixes: ['oweza://', 'https://oweza.vercel.app'],
+        prefixes: ['oweza://', 'https://oweza-api.onrender.com'],
         config: {
           screens: {
             SignIn: 'signin',

@@ -42,7 +42,7 @@ class MongoDatabase {
       this.client = new MongoClient(uri, {
         serverSelectionTimeoutMS: 5000, // 5 second timeout
         connectTimeoutMS: 10000, // 10 second connection timeout
-        socketTimeoutMS: 10000, // Match Vercel free tier limit
+        socketTimeoutMS: 10000, // 10 second socket timeout
       });
 
       await this.client.connect();
@@ -318,33 +318,8 @@ class MongoDatabase {
     }
   }
 
-  // Payment Request operations
-  async createPaymentRequest(request: any): Promise<any> {
-    const collection = await this.getCollection("paymentRequests");
-    await collection.insertOne(request);
-    return request;
-  }
-
-  async getPaymentRequestById(requestId: string): Promise<any | null> {
-    const collection = await this.getCollection("paymentRequests");
-    return await collection.findOne({ requestId } as any);
-  }
-
-  async getPaymentRequestsByCreator(creatorUserId: string): Promise<any[]> {
-    const collection = await this.getCollection("paymentRequests");
-    return await collection.find({ creatorUserId } as any).sort({ createdAt: -1 }).toArray();
-  }
-
-  async getPaymentRequestsByPayer(payerEmail: string): Promise<any[]> {
-    const collection = await this.getCollection("paymentRequests");
-    const normalizedEmail = payerEmail.toLowerCase().trim();
-    return await collection.find({ payerEmail: normalizedEmail } as any).sort({ createdAt: -1 }).toArray();
-  }
-
-  async updatePaymentRequest(requestId: string, updates: any): Promise<any | null> {
-    const collection = await this.getCollection("paymentRequests");
-    const result = await collection.findOneAndUpdate(
-      { requestId } as any,
+  // Payment Request operations removed - use invoices instead
+  // Invoices provide better functionality for requesting payments
       { $set: updates },
       { returnDocument: "after" }
     );
