@@ -3,7 +3,7 @@
  * Handles creating, claiming, and managing crypto gifts
  */
 
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { Request, Response } from "express";
 import { z } from "zod";
 import mongoDb from "../src/services/mongoDatabase";
 import { userDirectoryService } from "../src/services/UserDirectoryService";
@@ -33,7 +33,7 @@ const ClaimGiftSchema = z.object({
   claimTransactionHash: z.string(),
 });
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request, res: Response) {
   try {
     // GET - Retrieve gifts
     if (req.method === "GET") {

@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Import API handlers
+// Import API handlers (Express routers)
 import pendingTransfersHandler from './api/pending-transfers';
 import giftsHandler from './api/gifts';
 import healthHandler from './api/health';
@@ -21,37 +21,32 @@ import sendEmailHandler from './api/send-email';
 import tipsHandler from './api/tips';
 import transfersHandler from './api/transfers';
 import usersHandler from './api/users';
-import coinbaseSessionHandler from './api/coinbase-session';
 import processExpiryHandler from './api/cron/process-expiry';
 import sendRemindersHandler from './api/cron/send-reminders';
 import internationalQuotesHandler from './api/international/quotes';
 import internationalTransfersHandler from './api/international/transfers';
+import webRouter from './api/web';
 
-// Mount API routes (adapted from Vercel to Express)
-// Mount express Routers directly
+// Mount API routes (all Express routers)
 app.use('/api/pending-transfers', pendingTransfersHandler);
-app.all('/api/gifts', adaptVercelHandler(giftsHandler));
-app.all('/api/health', adaptVercelHandler(healthHandler));
+app.use('/api/gifts', giftsHandler);
+app.use('/api/health', healthHandler);
 app.use('/api/invoices', invoicesHandler);
 app.use('/api/send-email', sendEmailHandler);
 app.use('/api/tips', tipsHandler);
 app.use('/api/transfers', transfersHandler);
 app.use('/api/users', usersHandler);
-// Mount coinbase session handler directly as it's Express-compatible
-import type expressType from 'express';
-app.post('/api/coinbase-session', (coinbaseSessionHandler as unknown) as express.RequestHandler);
-import webRouter from './api/web';
 app.use('/api/web', webRouter);
-app.all('/api/cron/process-expiry', adaptVercelHandler(processExpiryHandler));
-app.all('/api/cron/send-reminders', adaptVercelHandler(sendRemindersHandler));
-app.all('/api/international/quotes', adaptVercelHandler(internationalQuotesHandler));
-app.all('/api/international/transfers', adaptVercelHandler(internationalTransfersHandler));
+app.use('/api/cron/process-expiry', processExpiryHandler);
+app.use('/api/cron/send-reminders', sendRemindersHandler);
+app.use('/api/international/quotes', internationalQuotesHandler);
+app.use('/api/international/transfers', internationalTransfersHandler);
 
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'MetaSend API',
+    message: 'Oweza API',
     version: '1.0.0'
   });
 });

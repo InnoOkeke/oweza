@@ -1,10 +1,10 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { Request, Response } from 'express';
 import mongoDatabase from '../src/services/mongoDatabase';
 
 /**
  * Health check endpoint to verify MongoDB connection
  */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request, res: Response) {
   const startTime = Date.now();
   
   try {

@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { Request, Response } from "express";
 import { z } from "zod";
 import {
   PROVIDERS,
@@ -14,7 +14,7 @@ import {
   FUNDING_METHODS,
 } from "../../src/constants/internationalProviders";
 
-const authorize = (req: VercelRequest): boolean => {
+const authorize = (req: Request): boolean => {
   const authHeader = req.headers.authorization;
   return Boolean(authHeader && authHeader === `Bearer ${process.env.METASEND_API_KEY}`);
 };
@@ -53,13 +53,13 @@ type ProviderQuote = {
   score: number;
 };
 
-const responseOk = (res: VercelResponse, quotes: ProviderQuote[]) =>
+const responseOk = (res: Response, quotes: ProviderQuote[]) =>
   res.status(200).json({ success: true, quotes });
 
-const badRequest = (res: VercelResponse, message: string) =>
+const badRequest = (res: Response, message: string) =>
   res.status(400).json({ success: false, error: message });
 
-const ensureAuthorized = (req: VercelRequest, res: VercelResponse) => {
+const ensureAuthorized = (req: Request, res: Response) => {
   if (!authorize(req)) {
     res.status(401).json({ success: false, error: "Unauthorized" });
     return false;
@@ -67,7 +67,7 @@ const ensureAuthorized = (req: VercelRequest, res: VercelResponse) => {
   return true;
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request, res: Response) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ success: false, error: "Method not allowed" });
