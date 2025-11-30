@@ -66,8 +66,13 @@ app.get('/', (req, res) => {
 });
 
 // 404 handler for API routes only
-app.use('/api/*', (_req, res) => {
-  res.status(404).json({ success: false, error: 'API endpoint not found' });
+app.use('/api', (_req, res, next) => {
+  // Only handle if no other route matched
+  if (!res.headersSent) {
+    res.status(404).json({ success: false, error: 'API endpoint not found' });
+  } else {
+    next();
+  }
 });
 
 // 404 handler for everything else

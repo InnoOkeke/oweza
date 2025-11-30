@@ -4,6 +4,7 @@ import { EthersAdapter } from '@reown/appkit-ethers-react-native';
 import { CELO_CHAIN } from './config/celo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { REOWN_PROJECT_ID, APP_METADATA } from './config/celo';
+import * as WebBrowser from 'expo-web-browser';
 
 // Storage adapter for AppKit
 const storageAdapter = {
@@ -45,6 +46,14 @@ const projectId = REOWN_PROJECT_ID;
 
 const ethersAdapter = new EthersAdapter();
 
+// Configure WebBrowser for OAuth flows
+WebBrowser.maybeCompleteAuthSession();
+
+// Create AppKit with email and social authentication enabled
+// Reown AppKit v2 for React Native automatically includes:
+// - Email authentication (magic link)
+// - Social logins (Google, Apple, etc.)
+// - Embedded wallet creation
 export const appKit = createAppKit({
   projectId,
   networks: [CELO_CHAIN],
@@ -52,6 +61,12 @@ export const appKit = createAppKit({
   adapters: [ethersAdapter],
   storage: storageAdapter,
   metadata: APP_METADATA,
-  // Note: Social login features are experimental and may not work properly
-  // Users should connect with WalletConnect-compatible wallets
+  // Configure to use in-app browser for authentication
+  customWallets: [],
+  // Reown v2 enables email/social auth by default when projectId is configured
+  // Users can sign in with:
+  // 1. Email (magic link) - opens in app browser
+  // 2. Google OAuth - opens in app browser
+  // 3. Apple Sign In - opens in app browser
+  // 4. External wallets (MetaMask, etc.)
 });

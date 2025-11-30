@@ -180,45 +180,7 @@ export function useRecentActivity() {
             }
         });
 
-        // Payment Requests: include paid/received
-        (paymentRequests || []).forEach((pr: PaymentRequest) => {
-            const status = pr.status;
-            // Include pending (unpaid) requests
-            const activityStatus = status === 'paid' ? 'completed' : 'pending';
-            const amount = Number(pr.amount);
-            const isSender = pr.fromEmail === email; // I created the request
-            const isRecipient = pr.toEmail === email; // Request sent to me, and I paid it
-            if (isSender) {
-                // Someone paid my request
-                allActivities.push({
-                    id: `${pr.id}-received`,
-                    type: 'payment-request-received',
-                    title: `Payment received`,
-                    subtitle: `From: ${pr.paidBy}`,
-                    amount: amount,
-                    currency: pr.currency,
-                    timestamp: new Date(pr.paidAt || pr.createdAt).getTime(),
-                    status: activityStatus,
-                    txHash: pr.txHash,
-                    metadata: { description: pr.description, from: pr.paidBy, to: pr.fromEmail },
-                });
-            }
-            if (isRecipient) {
-                // I paid the request
-                allActivities.push({
-                    id: `${pr.id}-paid`,
-                    type: 'payment-request-paid',
-                    title: `Payment sent`,
-                    subtitle: `To: ${pr.fromEmail}`,
-                    amount: -amount,
-                    currency: pr.currency,
-                    timestamp: new Date(pr.paidAt || pr.createdAt).getTime(),
-                    status: activityStatus,
-                    txHash: pr.txHash,
-                    metadata: { description: pr.description, from: pr.toEmail, to: pr.fromEmail },
-                });
-            }
-        });
+        // Payment Requests removed - now using Transfers for sending cUSD via email
 
         // Transfers: include sent and received
         (transfers || []).forEach((t: TransferRecord) => {

@@ -1,14 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
-  TextInput,
   View,
   ImageBackground,
-  TouchableOpacity,
-  Modal,
 } from "react-native";
 
 import { useAuth } from "../../providers/AppKitProvider";
@@ -23,19 +20,9 @@ export const SignInScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const { login, loading, error, isConnected, profile } = useAuth();
-  const [email, setEmail] = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
 
-  const handleWalletConnect = async () => {
-    // Open Reown AppKit modal - users can connect existing wallets or create new ones
-    await login();
-  };
-
-  const handleEmailLogin = async () => {
-    if (!email.trim()) return;
-    // For now, just open the wallet modal
-    // In the future, this could trigger email-based wallet creation
-    setModalVisible(false);
+  const handleSignIn = async () => {
+    // Open Reown AppKit modal for email/Google/Apple authentication
     await login();
   };
 
@@ -44,8 +31,8 @@ export const SignInScreen: React.FC = () => {
       <ImageBackground source={BgImage} style={styles.bgImage} resizeMode="cover">
         <View style={styles.containerCenter}>
           <Text style={styles.title}>✅ Signed In</Text>
-          <Text style={styles.titleBold}>Wallet: {profile.walletAddress}</Text>
           <Text style={styles.titleBold}>Email: {profile.email}</Text>
+          <Text style={styles.titleBold}>Wallet: {profile.walletAddress.slice(0, 6)}...{profile.walletAddress.slice(-4)}</Text>
         </View>
       </ImageBackground>
     );
@@ -59,70 +46,34 @@ export const SignInScreen: React.FC = () => {
       >
         <View style={styles.bottomContent}>
           <View style={styles.buttonSection}>
+            <Text style={styles.welcomeText}>Welcome to Oweza</Text>
+            <Text style={styles.subtitleText}>
+              Sign in with email, Google, or Apple to create your secure wallet
+            </Text>
+            
             <PrimaryButton
-              title="Create Wallet"
-              onPress={handleWalletConnect}
+              title="Sign In"
+              onPress={handleSignIn}
               loading={loading}
               disabled={loading}
               style={styles.socialButton}
             />
-
-            <TouchableOpacity
-              style={styles.emailOutlineBtn}
-              onPress={() => setModalVisible(true)}
-              disabled={loading}
-            >
-              <Text style={styles.emailOutlineText}>Sign in with Email</Text>
-            </TouchableOpacity>
+            
+            <Text style={styles.helperText}>
+              Powered by Reown • Secure authentication
+            </Text>
 
             {error && <Text style={styles.errorText}>{error}</Text>}
             
-            {loading && <Text style={styles.loadingText}>Setting up your wallet...</Text>}
+            {loading && <Text style={styles.loadingText}>Opening authentication...</Text>}
           </View>
 
           <Text style={styles.disclaimer}>
             By proceeding, you agree to our <Text style={styles.link}>terms of service</Text> and{" "}
-            <Text style={styles.link}>privacy policy</Text>, built on Celo.
+            <Text style={styles.link}>privacy policy</Text>. Built on Celo blockchain.
           </Text>
         </View>
 
-        {/* EMAIL MODAL */}
-        <Modal
-          transparent
-          visible={modalVisible}
-          animationType="slide"
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalBox}>
-              <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-
-              <Text style={styles.modalTitle}>Sign in with Email</Text>
-              <Text style={styles.modalSubtitle}>We'll create a secure wallet for you</Text>
-
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                placeholderTextColor={colors.textSecondary}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                editable={!loading}
-              />
-
-              <PrimaryButton
-                title="Continue"
-                onPress={handleEmailLogin}
-                loading={loading}
-                disabled={loading || !email.trim()}
-                style={{ width: "100%" }}
-              />
-            </View>
-          </View>
-        </Modal>
       </KeyboardAvoidingView>
     </ImageBackground>
   );
@@ -206,12 +157,18 @@ const createStyles = (colors: ColorPalette) =>
       marginTop: 8,
       fontSize: 14,
     },
-    instructionText: {
+    welcomeText: {
       color: colors.textPrimary,
       textAlign: "center",
-      fontSize: 18,
-      fontWeight: "600",
-      marginBottom: 16,
+      fontSize: 28,
+      fontWeight: "700",
+      marginBottom: 8,
+    },
+    subtitleText: {
+      color: colors.textSecondary,
+      textAlign: "center",
+      fontSize: 16,
+      marginBottom: 24,
     },
     helperText: {
       color: colors.textSecondary,
