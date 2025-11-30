@@ -80,8 +80,8 @@ class SharedEscrowDriver {
       throw new Error("ESCROW_TREASURY_WALLET env var is required");
     })();
     this.expirySeconds = Number(process.env.ESCROW_EXPIRY_SECONDS ?? 7 * 24 * 60 * 60);
-    this.backendAccountName = process.env.CDP_BACKEND_ACCOUNT_NAME || "metasend-backend";
-    this.backendSmartAccountName = process.env.CDP_BACKEND_SMART_ACCOUNT_NAME || "metasend-escrow";
+    this.backendAccountName = process.env.CDP_BACKEND_ACCOUNT_NAME || "oweza-backend";
+    this.backendSmartAccountName = process.env.CDP_BACKEND_SMART_ACCOUNT_NAME || "oweza-escrow";
     const salt = process.env.ESCROW_SALT_VERSION || "MS_ESCROW_V1";
     this.saltBytes32 = keccak256(stringToBytes(salt)) as Hex;
     const rpcUrl = process.env.ESCROW_RPC_URL || this.chain.rpcUrls.default.http[0];

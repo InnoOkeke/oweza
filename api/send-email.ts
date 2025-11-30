@@ -7,7 +7,7 @@ const router = Router();
 router.post('/', async (req: Request, res: Response) => {
   // Verify request is from your app (simple security check)
   const authHeader = req.headers.authorization;
-  if (!authHeader || authHeader !== `Bearer ${process.env.METASEND_API_KEY}`) {
+  if (!authHeader || authHeader !== `Bearer ${process.env.OWEZA_API_KEY}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {

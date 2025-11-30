@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 
-const TIPS_KEY = '@metasend:tips';
-const TIP_LINKS_KEY = '@metasend:tip_links';
+const TIPS_KEY = '@oweza:tips';
+const TIP_LINKS_KEY = '@oweza:tip_links';
 
 export interface Tip {
   id: string;
@@ -228,5 +228,5 @@ export async function deleteTipLink(id: string): Promise<void> {
  */
 export function getTipLinkUrl(tipLinkId: string): string {
   // TODO: Use actual app URL from config
-  return `https://metasend.io/tip/${tipLinkId}`;
+  return `https://oweza.io/tip/${tipLinkId}`;
 }

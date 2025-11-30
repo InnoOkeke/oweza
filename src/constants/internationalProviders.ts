@@ -24,7 +24,7 @@ export const FUNDING_METHODS = [
 export type FundingMethod = (typeof FUNDING_METHODS)[number];
 
 export type ProviderId =
-  | "coinbase"
+
   | "moonpay"
   | "transak"
   | "alchemy_pay"
@@ -123,23 +123,7 @@ export const SUPPORTED_COUNTRIES: CountryMetadata[] = [
 ];
 
 export const PROVIDERS: ProviderConfig[] = [
-  {
-    id: "coinbase",
-    name: "Coinbase International",
-    description: "Native Coinbase off-ramp and remittance rails",
-    regions: ["global"],
-    countries: SUPPORTED_COUNTRIES.map((country) => country.code),
-    payoutMethods: ["bank_account", "crypto_wallet"],
-    fundingMethods: ["crypto_wallet", "bank_transfer", "ach"],
-    supportedCurrencies: ["USD", "EUR", "GBP", "NGN", "GHS", "KES", "BRL", "MXN", "INR"],
-    minAmountUsd: 1,
-    maxAmountUsd: 25000,
-    baseFeeBps: 90,
-    flatFeeUsd: 0,
-    speed: "one_to_three_days",
-    allowsInAppFlow: true,
-    status: "live",
-  },
+
   {
     id: "moonpay",
     name: "MoonPay",

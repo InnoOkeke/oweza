@@ -1,7 +1,6 @@
 import Constants from "expo-constants";
 
 export type ProviderKeyMap = {
-  coinbaseApiKey?: string;
   moonpayApiKey?: string;
   moonpaySecretKey?: string;
   transakApiKey?: string;
@@ -19,7 +18,6 @@ type ExpoExtra = ProviderKeyMap;
 const extra = (Constants?.expoConfig?.extra ?? {}) as ExpoExtra;
 
 export const PROVIDER_KEYS: Required<ProviderKeyMap> = {
-  coinbaseApiKey: extra.coinbaseApiKey ?? "",
   moonpayApiKey: extra.moonpayApiKey ?? "",
   moonpaySecretKey: extra.moonpaySecretKey ?? "",
   transakApiKey: extra.transakApiKey ?? "",

@@ -12,7 +12,7 @@ export default async function handler(req: Request, res: Response) {
     
     // Check environment variables
     const hasMongoUri = Boolean(process.env.MONGODB_URI);
-    const hasApiKey = Boolean(process.env.METASEND_API_KEY);
+    const hasApiKey = Boolean(process.env.OWEZA_API_KEY);
     
     if (!hasMongoUri) {
       return res.status(500).json({
@@ -70,7 +70,7 @@ export default async function handler(req: Request, res: Response) {
         mongodb: 'failed',
         environment: {
           mongoUri: Boolean(process.env.MONGODB_URI) ? 'configured' : 'missing',
-          apiKey: Boolean(process.env.METASEND_API_KEY) ? 'configured' : 'missing',
+          apiKey: Boolean(process.env.OWEZA_API_KEY) ? 'configured' : 'missing',
         },
       },
       responseTime: `${duration}ms`,

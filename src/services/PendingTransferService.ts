@@ -13,8 +13,8 @@ import { PendingTransfer, ChainType } from "../types/database";
 declare const require: any;
 
 type ExpoExtra = {
-  metasendApiBaseUrl?: string;
-  metasendApiKey?: string;
+  owezaApiBaseUrl?: string;
+  owezaApiKey?: string;
 };
 
 const isReactNative = typeof navigator !== "undefined" && navigator.product === "ReactNative";
@@ -65,13 +65,14 @@ class PendingTransferService {
   private readonly useRemoteApi = isReactNative;
   private readonly extra = getExpoExtra();
   private readonly apiBaseUrl =
-    (isReactNative ? this.extra.metasendApiBaseUrl : process.env.METASEND_API_BASE_URL) || "";
-  private readonly apiKey =
-    (isReactNative ? this.extra.metasendApiKey : process.env.METASEND_API_KEY) || "";
+    (isReactNative ? this.extra.owezaApiBaseUrl : process.env.OWEZA_API_BASE_URL) || "";
+  private readonly apiKey = (isReactNative ? this.extra.owezaApiKey : process.env.OWEZA_API_KEY) || "";
 
   private ensureApiConfig() {
     if (!this.apiBaseUrl || !this.apiKey) {
-      throw new Error("MetaSend API configuration missing. Set METASEND_API_BASE_URL and METASEND_API_KEY.");
+      throw new Error(
+        "Oweza API configuration missing. Set OWEZA_API_BASE_URL and OWEZA_API_KEY."
+      );
     }
   }
 
@@ -79,7 +80,7 @@ class PendingTransferService {
     this.ensureApiConfig();
 
     const response = await fetch(`${this.apiBaseUrl}${path}`, {
-      ...init,
+      ...(init || {}),
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${this.apiKey}`,

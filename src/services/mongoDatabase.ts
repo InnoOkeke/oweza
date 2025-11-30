@@ -48,7 +48,7 @@ class MongoDatabase {
       await this.client.connect();
       console.log('✅ MongoDB connected successfully');
 
-      this.db = this.client.db("metasend");
+      this.db = this.client.db("oweza");
 
       // Create indexes (fire-and-forget, no await)
       this.createIndexes().catch(err => {

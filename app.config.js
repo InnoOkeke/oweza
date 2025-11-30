@@ -37,6 +37,8 @@ export default ({ config }) => ({
     mongodbUri: process.env.MONGODB_URI || "",
     owezaApiBaseUrl: process.env.OWEZA_API_BASE_URL || "",
     owezaApiKey: process.env.OWEZA_API_KEY || "",
+    // Legacy MetaSend keys removed; use OWEZA entries instead
+    // (kept for backward compatibility in older builds if needed)
 
     eas: {
       projectId: process.env.EAS_PROJECT_ID || "",

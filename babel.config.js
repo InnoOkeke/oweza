@@ -21,6 +21,21 @@ module.exports = function (api) {
           allowUndefined: true,
         },
       ],
+      [
+        'module-resolver',
+        {
+          alias: {
+            '@gemini-wallet/core': './empty-module.js',
+            '@coinbase/wallet-sdk': './empty-module.js',
+            '@keystonehq/sdk': './empty-module.js',
+            '@ledgerhq/connect-kit-loader': './empty-module.js',
+            'porto': './empty-module.js',
+            'porto/internal': './empty-module.js',
+            '@blocto/sdk': './empty-module.js',
+            'magic-sdk': './empty-module.js',
+          },
+        },
+      ],
     ],
     parserOpts: {
       plugins: ['deprecatedImportAssert'],

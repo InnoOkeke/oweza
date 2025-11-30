@@ -7,7 +7,7 @@ if (!email) {
 }
 
 const baseUrl = process.env.OWEZA_API_BASE_URL || "https://oweza-api.onrender.com";
-const apiKey = process.env.METASEND_API_KEY;
+const apiKey = process.env.OWEZA_API_KEY;
 
 if (!apiKey) {
   console.error("METASEND_API_KEY is not set");

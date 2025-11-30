@@ -7,7 +7,7 @@ const router = Router();
 const authorize = (req: Request): boolean => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return false;
-  return authHeader === `Bearer ${process.env.METASEND_API_KEY}`;
+  return authHeader === `Bearer ${process.env.OWEZA_API_KEY}`;
 };
 
 const badRequest = (res: Response, message: string) =>

@@ -21,12 +21,7 @@ import {
   buildRampUrl,
   buildRampUrlWithSession,
   getAvailableProviders,
-  getCoinbasePaymentMethods,
-  fetchCoinbasePaymentMethods,
-  getPaymentMethodName,
-  getPaymentMethodDescription,
   getProviderInfo,
-  type PaymentMethod,
   type RampProvider,
   type RampType,
 } from "../services/ramp";
@@ -59,12 +54,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [isCurrencySelectorVisible, setIsCurrencySelectorVisible] = useState(false);
   const [selectedRampType, setSelectedRampType] = useState<RampType | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<RampProvider | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
   const [showWebView, setShowWebView] = useState(false);
   const [webViewLoading, setWebViewLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"home" | "settings">("home");
-  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<PaymentMethod[]>([]);
-  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+
   const [availableProviders, setAvailableProviders] = useState<RampProvider[]>([]);
   const [locationPermission, setLocationPermission] = useState<LocationPermissionStatus>('undetermined');
   const [userCountry, setUserCountry] = useState<string>('');
@@ -211,26 +204,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   }, [selectedRampType]);
 
-  // Fetch payment methods when provider and type are selected
-  React.useEffect(() => {
-    if (selectedProvider === "coinbase" && selectedRampType && profile?.walletAddress) {
-      setLoadingPaymentMethods(true);
-      fetchCoinbasePaymentMethods(selectedRampType, profile.walletAddress)
-        .then(methods => {
-          setAvailablePaymentMethods(methods);
-        })
-        .catch(error => {
-          console.error("Error fetching payment methods:", error);
-          // Fallback to static list
-          setAvailablePaymentMethods(getCoinbasePaymentMethods(selectedRampType));
-        })
-        .finally(() => {
-          setLoadingPaymentMethods(false);
-        });
-    } else {
-      setAvailablePaymentMethods([]);
-    }
-  }, [selectedProvider, selectedRampType, profile?.walletAddress]);
+
 
   const hasCeloWallet = Boolean(profile?.walletAddress && profile.walletAddress.startsWith("0x"));
 
@@ -395,23 +369,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleProviderSelect = (provider: RampProvider) => {
     setSelectedProvider(provider);
-    const info = getProviderInfo(provider);
-
-    if (info.supportsPaymentMethods) {
-      setSelectedPaymentMethod(null);
-    } else {
-      openRamp(provider, null);
-    }
+    openRamp(provider);
   };
 
-  const handlePaymentMethodSelect = (method: PaymentMethod) => {
-    setSelectedPaymentMethod(method);
-    if (selectedProvider) {
-      openRamp(selectedProvider, method);
-    }
-  };
-
-  const openRamp = async (provider: RampProvider, paymentMethod: PaymentMethod | null) => {
+  const openRamp = async (provider: RampProvider) => {
     if (!profile?.walletAddress) {
       console.error("No wallet address available");
       return;
@@ -427,7 +388,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         walletAddress: profile.walletAddress,
         assetSymbol: "CUSD",
         destinationNetwork: "celo",
-        paymentMethod: paymentMethod ?? undefined,
       });
 
       setRampUrl(url);
@@ -444,7 +404,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setRampUrl(null);
     setSelectedRampType(null);
     setSelectedProvider(null);
-    setSelectedPaymentMethod(null);
   };
 
   const handleTransactionPress = (item: ActivityItem) => {
@@ -739,7 +698,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               <View style={styles.inlineSendSheet} accessibilityLabel="Send options">
                 <Text style={styles.inlineSendTitle}>Choose how to send</Text>
                 <Text style={styles.inlineSendSubtitle}>
-                  Pick MetaSend email delivery or route funds to a global payout provider.
+                  Pick Oweza email delivery or route funds to a global payout provider.
                 </Text>
 
                 <TouchableOpacity style={styles.inlineSendButton} onPress={handleSendViaEmail}>
@@ -749,7 +708,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                       Resolve wallets automatically and keep funds pending for new recipients.
                     </Text>
                   </View>
-                  <Text style={styles.inlineSendBadge}>MetaSend</Text>
+                  <Text style={styles.inlineSendBadge}>Oweza</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.inlineSendButton} onPress={handleInternationalTransfer}>
@@ -1108,36 +1067,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   </>
                 )}
 
-                {/* Payment Method Selection (Coinbase only) */}
-                {selectedProvider === "coinbase" && (
-                  <>
-                    <Pressable style={styles.backButton} onPress={() => setSelectedProvider(null)}>
-                      <Text style={styles.backButtonText}>← Back to providers</Text>
-                    </Pressable>
 
-                    <Text style={styles.rampSectionTitle}>Select Payment Method</Text>
-
-                    {loadingPaymentMethods ? (
-                      <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={colors.primary} />
-                        <Text style={styles.loadingText}>Loading payment methods...</Text>
-                      </View>
-                    ) : availablePaymentMethods.length > 0 ? (
-                      availablePaymentMethods.map((method) => (
-                        <TouchableOpacity
-                          key={method}
-                          style={styles.rampProviderCard}
-                          onPress={() => handlePaymentMethodSelect(method)}
-                        >
-                          <Text style={styles.rampProviderName}>{getPaymentMethodName(method)}</Text>
-                          <Text style={styles.rampProviderDescription}>{getPaymentMethodDescription(method)}</Text>
-                        </TouchableOpacity>
-                      ))
-                    ) : (
-                      <Text style={styles.emptyText}>No payment methods available for your region</Text>
-                    )}
-                  </>
-                )}
               </ScrollView>
             </View>
           </Modal>

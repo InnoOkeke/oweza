@@ -16,7 +16,7 @@ import {
 
 const authorize = (req: Request): boolean => {
   const authHeader = req.headers.authorization;
-  return Boolean(authHeader && authHeader === `Bearer ${process.env.METASEND_API_KEY}`);
+  return Boolean(authHeader && authHeader === `Bearer ${process.env.OWEZA_API_KEY}`);
 };
 
 const QuoteSchema = z.object({

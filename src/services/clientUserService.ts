@@ -8,8 +8,15 @@ export interface UserProfile {
     walletAddress?: string;
 }
 
-const API_URL = Constants?.expoConfig?.extra?.API_URL || 'http://localhost:3000';
-const API_KEY = Constants?.expoConfig?.extra?.METASEND_API_KEY;
+const API_URL =
+    Constants?.expoConfig?.extra?.owezaApiBaseUrl ||
+    Constants?.expoConfig?.extra?.API_URL ||
+    process.env.OWEZA_API_BASE_URL ||
+    'http://localhost:3000';
+const API_KEY =
+    Constants?.expoConfig?.extra?.owezaApiKey ||
+    process.env.OWEZA_API_KEY ||
+    "";
 
 /**
  * Client-side user service for React Native

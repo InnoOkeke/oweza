@@ -48,8 +48,8 @@ export type TransferSubmissionResult = {
 };
 
 type ExpoExtra = {
-  metasendApiBaseUrl?: string;
-  metasendApiKey?: string;
+  owezaApiBaseUrl?: string;
+  owezaApiKey?: string;
 };
 
 const isReactNative = typeof navigator !== "undefined" && navigator.product === "ReactNative";
@@ -68,12 +68,12 @@ const getExpoExtra = (): ExpoExtra => {
 };
 
 const extra = getExpoExtra();
-const apiBaseUrl = (isReactNative ? extra.metasendApiBaseUrl : process.env.METASEND_API_BASE_URL) || "";
-const apiKey = (isReactNative ? extra.metasendApiKey : process.env.METASEND_API_KEY) || "";
+const apiBaseUrl = (isReactNative ? extra.owezaApiBaseUrl : process.env.OWEZA_API_BASE_URL) || "";
+const apiKey = (isReactNative ? extra.owezaApiKey : process.env.OWEZA_API_KEY) || "";
 
 const ensureApiConfig = () => {
   if (!apiBaseUrl || !apiKey) {
-    throw new Error("MetaSend API configuration missing. Set METASEND_API_BASE_URL and METASEND_API_KEY.");
+    throw new Error("Oweza API configuration missing. Set OWEZA_API_BASE_URL and OWEZA_API_KEY.");
   }
 };
 
@@ -87,7 +87,7 @@ const apiRequest = async <T>(path: string, init?: RequestInit): Promise<T> => {
   ensureApiConfig();
 
   const response = await fetch(`${apiBaseUrl}${path}`, {
-    ...init,
+    ...(init || {}),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,

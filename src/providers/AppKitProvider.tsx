@@ -1,34 +1,41 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { createAppKit, AppKit } from '@reown/appkit-react-native';
-import { WagmiProvider, useAccount, useDisconnect, useWalletClient } from 'wagmi';
+import { AppKit } from '@reown/appkit-react-native';
+import { useAccount, useDisconnect, useWalletClient } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { celoSepolia } from 'viem/chains';
 import { REOWN_PROJECT_ID, APP_METADATA, CUSD_TOKEN_ADDRESS } from '../config/celo';
 import { registerUser } from "../services/api";
-import { http, createConfig } from 'wagmi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Create a storage adapter that implements the required Storage interface
+const storageAdapter = {
+    async getItem(key: string): Promise<string | null> {
+        return await AsyncStorage.getItem(key);
+    },
+    async setItem(key: string, value: string): Promise<void> {
+        await AsyncStorage.setItem(key, value);
+    },
+    async removeItem(key: string): Promise<void> {
+        await AsyncStorage.removeItem(key);
+    },
+    async getKeys(): Promise<string[]> {
+        const keys = await AsyncStorage.getAllKeys();
+        return [...keys]; // Convert readonly array to mutable array
+    },
+    async getEntries(): Promise<[string, any][]> {
+        const keys = await AsyncStorage.getAllKeys();
+        const entries = await AsyncStorage.multiGet(keys);
+        return entries.map(([key, value]) => [key, value || '']) as [string, any][];
+    },
+};
 
 // 1. Get projectId
 const projectId = REOWN_PROJECT_ID;
 
-// 2. Create config for React Native
+// 2. Create config for React Native using WagmiAdapter
 const chains = [celoSepolia] as const;
 
-const wagmiConfig = createConfig({
-    chains,
-    transports: {
-        [celoSepolia.id]: http(),
-    },
-});
-
-// 3. Create modal for React Native
-createAppKit({
-    projectId,
-    wagmiConfig,
-    metadata: APP_METADATA,
-    enableAnalytics: true,
-    storage: AsyncStorage,
-});
+// AppKit instance is created in `src/AppKitConfig.ts` and provided at the app root.
 
 const queryClient = new QueryClient();
 
@@ -137,20 +144,17 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
     return (
         <AuthContext.Provider value={value}>
             {children}
-            <AppKit />
         </AuthContext.Provider>
     );
 };
 
 export const AppKitProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
     return (
-        <WagmiProvider config={wagmiConfig}>
-            <QueryClientProvider client={queryClient}>
-                <AuthProviderContent>
-                    {children}
-                </AuthProviderContent>
-            </QueryClientProvider>
-        </WagmiProvider>
+        <QueryClientProvider client={queryClient}>
+            <AuthProviderContent>
+                {children}
+            </AuthProviderContent>
+        </QueryClientProvider>
     );
 };
 

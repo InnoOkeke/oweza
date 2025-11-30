@@ -77,7 +77,7 @@ class UserDirectoryService {
 
     try {
       const response = await fetch(`${this.apiBaseUrl}${path}`, {
-        ...init,
+        ...(init || {}),
         signal: controller.signal,
         headers: {
           "Content-Type": "application/json",

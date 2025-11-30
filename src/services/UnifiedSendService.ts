@@ -94,7 +94,7 @@ class UnifiedSendService {
       };
     }
 
-    // TODO: Add support for MetaSend eTag (e.g., @username)
+    // TODO: Add support for eTag resolution (e.g., @username)
     // if (trimmed.startsWith('@')) {
     //   return this.resolveETag(trimmed);
     // }

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 
-const GIFTS_KEY = '@metasend:gifts';
+const GIFTS_KEY = '@oweza:gifts';
 
 export type GiftTheme = 
   | 'birthday'
@@ -237,7 +237,7 @@ export async function claimCryptoGift(
  * Get gift URL
  */
 export function getGiftUrl(giftId: string, claimCode?: string): string {
-  const base = `https://metasend.io/gift/${giftId}`;
+  const base = `https://oweza.io/gift/${giftId}`;
   return claimCode ? `${base}?code=${claimCode}` : base;
 }
 

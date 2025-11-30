@@ -33,11 +33,11 @@ if (!(global as any).crypto.getHashes) {
   (global as any).crypto.getHashes = cryptoPolyfill.getHashes;
 }
 
-// Set up browserCrypto for libraries that expect it (like Web3Auth)
+// Set up browserCrypto for libraries that expect it
 // We explicitly use QuickCrypto.webcrypto here to ensure subtle is present
 (global as any).browserCrypto = QuickCrypto.webcrypto;
 
-// If QuickCrypto.webcrypto didn't have subtle, copy it from our global.crypto (which might be from peculiar)
+// If QuickCrypto.webcrypto didn't have subtle, copy it from our global.crypto
 if (!(global as any).browserCrypto.subtle && (global as any).crypto.subtle) {
   (global as any).browserCrypto.subtle = (global as any).crypto.subtle;
 }
@@ -45,6 +45,96 @@ if (!(global as any).browserCrypto.subtle && (global as any).crypto.subtle) {
 // Ensure browserCrypto has randomBytes too
 if (!(global as any).browserCrypto.randomBytes) {
   (global as any).browserCrypto.randomBytes = (global as any).crypto.randomBytes;
+}
+
+// Polyfill document for web libraries
+if (typeof (global as any).document === 'undefined') {
+  (global as any).document = {
+    createElement: () => ({}),
+    createElementNS: () => ({}),
+    getElementById: () => null,
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    getElementsByTagName: () => [],
+    getElementsByClassName: () => [],
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    createTreeWalker: () => ({
+      nextNode: () => null,
+      currentNode: null,
+    }),
+    createNodeIterator: () => ({
+      nextNode: () => null,
+    }),
+    body: {},
+    head: {},
+    documentElement: {},
+  };
+}
+
+// Polyfill customElements for web components
+if (typeof (global as any).customElements === 'undefined') {
+  (global as any).customElements = {
+    define: () => {},
+    get: () => undefined,
+    whenDefined: () => Promise.resolve(),
+    upgrade: () => {},
+  };
+}
+
+// Polyfill CSSStyleSheet for web components
+if (typeof (global as any).CSSStyleSheet === 'undefined') {
+  (global as any).CSSStyleSheet = class CSSStyleSheet {
+    cssRules = [];
+    insertRule() { return 0; }
+    deleteRule() {}
+    replace() { return Promise.resolve(this); }
+    replaceSync() {}
+  };
+}
+
+// Polyfill ShadowRoot for web components
+if (typeof (global as any).ShadowRoot === 'undefined') {
+  (global as any).ShadowRoot = class ShadowRoot {};
+}
+
+// Polyfill HTMLElement and other DOM classes
+if (typeof (global as any).HTMLElement === 'undefined') {
+  (global as any).HTMLElement = class HTMLElement {
+    style = {};
+    classList = {
+      add: () => {},
+      remove: () => {},
+      contains: () => false,
+      toggle: () => false,
+    };
+    setAttribute() {}
+    getAttribute() { return null; }
+    removeAttribute() {}
+    addEventListener() {}
+    removeEventListener() {}
+    appendChild() { return this; }
+    removeChild() { return this; }
+    querySelector() { return null; }
+    querySelectorAll() { return []; }
+  };
+}
+
+// Polyfill other DOM element types
+if (typeof (global as any).Element === 'undefined') {
+  (global as any).Element = (global as any).HTMLElement;
+}
+if (typeof (global as any).Node === 'undefined') {
+  (global as any).Node = class Node {};
+}
+if (typeof (global as any).Text === 'undefined') {
+  (global as any).Text = class Text {};
+}
+if (typeof (global as any).Comment === 'undefined') {
+  (global as any).Comment = class Comment {};
+}
+if (typeof (global as any).DocumentFragment === 'undefined') {
+  (global as any).DocumentFragment = class DocumentFragment {};
 }
 
 // Also set on globalThis for maximum compatibility
@@ -93,10 +183,63 @@ if (typeof (global as any).self.isSecureContext === 'undefined') {
   (global as any).self.isSecureContext = true;
 }
 
+// Polyfill window.addEventListener for wagmi/appkit compatibility
+if (typeof (global as any).window.addEventListener === 'undefined') {
+  const eventListeners = new Map();
+
+  (global as any).window.addEventListener = function (type: string, listener: any) {
+    if (!eventListeners.has(type)) {
+      eventListeners.set(type, new Set());
+    }
+    eventListeners.get(type).add(listener);
+  };
+
+  (global as any).window.removeEventListener = function (type: string, listener: any) {
+    if (eventListeners.has(type)) {
+      eventListeners.get(type).delete(listener);
+    }
+  };
+
+  (global as any).window.dispatchEvent = function (event: any) {
+    const type = event.type || event;
+    if (eventListeners.has(type)) {
+      eventListeners.get(type).forEach((listener: any) => {
+        try {
+          listener(event);
+        } catch (e) {
+          console.error('Error in event listener:', e);
+        }
+      });
+    }
+    return true;
+  };
+}
+
 // Polyfill structuredClone if missing
 import structuredClone from "@ungap/structured-clone";
 if (!("structuredClone" in globalThis)) {
   (globalThis as any).structuredClone = structuredClone as any;
+}
+
+// Polyfill CustomEvent for AppKit/WalletConnect compatibility
+if (typeof (global as any).CustomEvent === 'undefined') {
+  class CustomEvent {
+    type: string;
+    detail: any;
+    bubbles: boolean;
+    cancelable: boolean;
+
+    constructor(type: string, eventInitDict?: any) {
+      this.type = type;
+      this.detail = eventInitDict?.detail ?? null;
+      this.bubbles = eventInitDict?.bubbles ?? false;
+      this.cancelable = eventInitDict?.cancelable ?? false;
+    }
+  }
+
+  (global as any).CustomEvent = CustomEvent;
+  (global as any).window.CustomEvent = CustomEvent;
+  (global as any).self.CustomEvent = CustomEvent;
 }
 
 // Debug logging

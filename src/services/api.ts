@@ -1,14 +1,26 @@
 /**
- * API Client for MetaSend Backend
- * 
- * This file contains client-side wrappers for calling the MetaSend API.
+ * API Client for Oweza Backend
+ *
+ * This file contains client-side wrappers for calling the Oweza API.
+ * Mobile app should NEVER import server services directly (they use MongoDB/Node.js libs).
+ */
+/**
+ * API Client for Oweza Backend
+ *
+ * This file contains client-side wrappers for calling the Oweza API.
  * Mobile app should NEVER import server services directly (they use MongoDB/Node.js libs).
  */
 
 import Constants from "expo-constants";
 
-const API_BASE_URL = Constants.expoConfig?.extra?.metasendApiBaseUrl;
-const API_KEY = Constants.expoConfig?.extra?.metasendApiKey;
+const API_BASE_URL =
+  Constants.expoConfig?.extra?.owezaApiBaseUrl ||
+  process.env.OWEZA_API_BASE_URL ||
+  "https://oweza.onrender.com";
+const API_KEY =
+  Constants.expoConfig?.extra?.owezaApiKey ||
+  process.env.OWEZA_API_KEY ||
+  "";
 
 console.log("🔧 API Configuration:", {
   baseUrl: API_BASE_URL,
@@ -16,11 +28,11 @@ console.log("🔧 API Configuration:", {
 });
 
 if (!API_BASE_URL) {
-  console.error("❌ METASEND_API_BASE_URL not configured");
+  console.error("❌ OWEZA_API_BASE_URL not configured");
 }
 
 if (!API_KEY) {
-  console.error("❌ METASEND_API_KEY not configured");
+  console.error("❌ OWEZA_API_KEY not configured");
 }
 
 interface ApiResponse<T> {
@@ -41,7 +53,7 @@ async function apiRequest<T>(
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${API_KEY}`,
-    ...options.headers,
+    ...(options.headers || {}),
   };
 
   console.log(`📡 API Request: ${endpoint}`, { url, method: options.method || 'GET' });

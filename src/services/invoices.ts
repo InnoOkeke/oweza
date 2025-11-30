@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 
-const INVOICES_KEY = '@metasend:invoices';
+const INVOICES_KEY = '@oweza:invoices';
 
 export interface InvoiceItem {
   description: string;
@@ -201,5 +201,5 @@ export async function updateInvoice(updatedInvoice: Invoice): Promise<void> {
  * Get invoice URL
  */
 export function getInvoiceUrl(invoiceId: string): string {
-  return `https://metasend.io/invoice/${invoiceId}`;
+  return `https://oweza.io/invoice/${invoiceId}`;
 }

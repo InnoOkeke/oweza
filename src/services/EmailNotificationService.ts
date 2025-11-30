@@ -43,23 +43,23 @@ type ExpoExtra = {
   awsSesRegion?: string;
   awsSesAccessKey?: string;
   awsSesSecretKey?: string;
-  metasendApiBaseUrl?: string;
-  metasendApiKey?: string;
+  owezaApiBaseUrl?: string;
+  owezaApiKey?: string;
 };
 
 class EmailNotificationService {
   private readonly extra = getExpoExtra();
-  private readonly APP_URL = this.extra.appUrl ?? process.env.APP_URL ?? "https://metasend-api.onrender.com";
-  private readonly SUPPORT_EMAIL = this.extra.supportEmail ?? process.env.SUPPORT_EMAIL ?? "support@metasend.io";
+  private readonly APP_URL = this.extra.appUrl ?? process.env.APP_URL ?? "https://oweza.onrender.com";
+  private readonly SUPPORT_EMAIL = this.extra.supportEmail ?? process.env.SUPPORT_EMAIL ?? "noreply@kellon.xyz";
   private readonly SENDGRID_API_KEY = this.extra.sendgridApiKey ?? process.env.SENDGRID_API_KEY ?? "";
   private readonly RESEND_API_KEY = this.extra.resendApiKey ?? process.env.RESEND_API_KEY ?? "";
   private readonly AWS_SES_REGION = this.extra.awsSesRegion ?? process.env.AWS_SES_REGION ?? "";
   private readonly AWS_SES_ACCESS_KEY = this.extra.awsSesAccessKey ?? process.env.AWS_SES_ACCESS_KEY ?? "";
   private readonly AWS_SES_SECRET_KEY = this.extra.awsSesSecretKey ?? process.env.AWS_SES_SECRET_KEY ?? "";
-  private readonly apiBaseUrl = (isReactNative ? this.extra.metasendApiBaseUrl : process.env.METASEND_API_BASE_URL) ||
-    process.env.METASEND_API_BASE_URL ||
-    "https://metasend-api.onrender.com";
-  private readonly apiKey = (isReactNative ? this.extra.metasendApiKey : process.env.METASEND_API_KEY) || "";
+  private readonly apiBaseUrl = (isReactNative ? this.extra.owezaApiBaseUrl : process.env.OWEZA_API_BASE_URL) ||
+    process.env.OWEZA_API_BASE_URL ||
+    "https://oweza.onrender.com";
+  private readonly apiKey = (isReactNative ? this.extra.owezaApiKey : process.env.OWEZA_API_KEY) || "";
 
   /**
    * Send invite email to non-registered user with pending transfer
@@ -99,9 +99,9 @@ class EmailNotificationService {
 
             <div class="content">
               <h2>Hi there! 👋</h2>
-              <p>${senderName}${senderEmail ? ` (${senderEmail})` : ""} sent you <strong>${amount} ${token}</strong> using MetaSend.</p>
+              <p>${senderName}${senderEmail ? ` (${senderEmail})` : ""} sent you <strong>${amount} ${token}</strong> using Oweza.</p>
               
-              <p>Create your free MetaSend wallet to claim your funds:</p>
+              <p>Create your free Oweza wallet to claim your funds:</p>
               
               <a href="${this.APP_URL}/claim/${transferId}" class="button">
                 Claim Your ${token}
@@ -112,20 +112,20 @@ class EmailNotificationService {
                 <p>After 7 days, unclaimed funds will be returned to the sender.</p>
               </div>
 
-              <h3>What's MetaSend?</h3>
-              <p>MetaSend is a multi-chain crypto wallet that makes sending money as easy as email. No complex addresses, just send money using email addresses!</p>
+              <h3>What's Oweza?</h3>
+              <p>Oweza is a crypto wallet that makes sending money as easy as email. No complex addresses, just send money using email addresses!</p>
               
               <ul>
                 <li>✅ Send to any email address</li>
                 <li>✅ Support for multiple blockchains</li>
-                <li>✅ Gasless transfers with Coinbase Paymaster</li>
-                <li>✅ Secure Coinbase Smart Wallet</li>
+                <li>✅ Gasless transfers with Celo Fee Abstraction</li>
+                <li>✅ Secure Smart Wallet</li>
               </ul>
             </div>
 
             <div class="footer">
               <p>Questions? Contact us at <a href="mailto:${this.SUPPORT_EMAIL}">${this.SUPPORT_EMAIL}</a></p>
-              <p>© ${new Date().getFullYear()} MetaSend. All rights reserved.</p>
+              <p>© ${new Date().getFullYear()} Oweza. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -171,7 +171,7 @@ class EmailNotificationService {
                 View in App
               </a>
 
-              <p style="color: #64748B; font-size: 14px;">The funds are now in your MetaSend wallet and ready to use.</p>
+              <p style="color: #64748B; font-size: 14px;">The funds are now in your Oweza wallet and ready to use.</p>
             </div>
           </div>
         </body>
@@ -266,7 +266,7 @@ class EmailNotificationService {
 
             <div style="padding: 20px 0;">
               <p>Hi there!</p>
-              <p>${senderName} sent you <strong>${amount} ${token}</strong> on MetaSend ${7 - daysLeft} days ago.</p>
+              <p>${senderName} sent you <strong>${amount} ${token}</strong> on Oweza ${7 - daysLeft} days ago.</p>
               <p><strong>You have ${daysLeft} day${daysLeft !== 1 ? 's' : ''} left to claim it!</strong></p>
 
               <a href="${this.APP_URL}/claim/${transferId}" style="display: inline-block; background: #F59E0B; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;">
@@ -313,7 +313,7 @@ class EmailNotificationService {
             <div style="padding: 20px 0;">
               <p>Hi ${senderName}!</p>
               <p>Great news! ${recipientEmail} has claimed your transfer of <strong>${amount} ${token}</strong>.</p>
-              <p>The funds have been successfully delivered to their MetaSend wallet.</p>
+              <p>The funds have been successfully delivered to their Oweza wallet.</p>
 
               <a href="${this.APP_URL}/activity" style="display: inline-block; background: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin: 20px 0;">
                 View Transaction
@@ -351,7 +351,7 @@ class EmailNotificationService {
             <h2>🔄 Transfer Expired - Funds Returned</h2>
             <p>Hi ${senderName}!</p>
             <p>Your transfer of <strong>${amount} ${token}</strong> to ${recipientEmail} was not claimed within 7 days.</p>
-            <p>The funds have been automatically returned to your MetaSend wallet.</p>
+            <p>The funds have been automatically returned to your Oweza wallet.</p>
 
             <div style="background: #F8FAFC; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <p style="margin: 5px 0;"><strong>Amount Returned:</strong> ${amount} ${token}</p>
@@ -383,7 +383,7 @@ class EmailNotificationService {
   private async sendEmail(params: { to: string; subject: string; html: string }): Promise<boolean> {
     try {
       if (!this.apiKey) {
-        console.warn("⚠️ Missing METASEND_API_KEY. Email not sent.");
+        console.warn("⚠️ Missing OWEZA_API_KEY. Email not sent.");
         return false;
       }
 
@@ -401,7 +401,7 @@ class EmailNotificationService {
           to: params.to,
           subject: params.subject,
           html: params.html,
-          from: `MetaSend <${this.SUPPORT_EMAIL}>`,
+          from: `Oweza <${this.SUPPORT_EMAIL}>`,
         }),
       });
 
@@ -476,8 +476,8 @@ class EmailNotificationService {
             </div>
 
             <div class="footer">
-              <p>Powered by MetaSend - Crypto payments made simple</p>
-              <p><a href="${this.APP_URL}">Visit MetaSend</a></p>
+              <p>Powered by Oweza - Crypto payments made simple</p>
+              <p><a href="${this.APP_URL}">Visit Oweza</a></p>
             </div>
           </div>
         </body>
@@ -538,8 +538,8 @@ class EmailNotificationService {
             </div>
 
             <div class="footer">
-              <p>Powered by MetaSend - Crypto payments made simple</p>
-              <p><a href="${this.APP_URL}">Visit MetaSend</a></p>
+                    <p>Powered by Oweza - Crypto payments made simple</p>
+                      <p><a href="${this.APP_URL}">Visit Oweza</a></p>
             </div>
           </div>
         </body>
@@ -608,8 +608,8 @@ class EmailNotificationService {
             </div>
 
             <div class="footer">
-              <p>Powered by MetaSend - Crypto payments made simple</p>
-              <p><a href="${this.APP_URL}">Visit MetaSend</a></p>
+              <p>Powered by Oweza - Crypto payments made simple</p>
+              <p><a href="${this.APP_URL}">Visit Oweza</a></p>
             </div>
           </div>
         </body>
@@ -691,8 +691,8 @@ class EmailNotificationService {
             </div>
 
             <div class="footer">
-              <p>Powered by MetaSend - Crypto payments made simple</p>
-              <p><a href="${this.APP_URL}">Visit MetaSend</a></p>
+              <p>Powered by Oweza - Crypto payments made simple</p>
+              <p><a href="${this.APP_URL}">Visit Oweza</a></p>
             </div>
           </div>
         </body>

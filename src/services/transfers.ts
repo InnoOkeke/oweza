@@ -45,7 +45,7 @@ const apiRequest = async <T>(path: string, init?: RequestInit): Promise<T> => {
   ensureApiConfig();
 
   const response = await fetch(`${apiBaseUrl}${path}`, {
-    ...init,
+    ...(init || {}),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,

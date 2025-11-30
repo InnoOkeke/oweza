@@ -1,8 +1,8 @@
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const LOCATION_PERMISSION_KEY = '@metasend:location_permission';
-const USER_COUNTRY_KEY = '@metasend:user_country';
+const LOCATION_PERMISSION_KEY = '@oweza:location_permission';
+const USER_COUNTRY_KEY = '@oweza:user_country';
 
 export type LocationPermissionStatus = 'granted' | 'denied' | 'undetermined';
 
