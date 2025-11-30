@@ -52,4 +52,6 @@ export const appKit = createAppKit({
   adapters: [ethersAdapter],
   storage: storageAdapter,
   metadata: APP_METADATA,
+  // Note: Social login features are experimental and may not work properly
+  // Users should connect with WalletConnect-compatible wallets
 });

@@ -89,7 +89,7 @@ class SharedEscrowDriver {
   }
 
   async createTransfer(input: CreateEscrowTransferInput): Promise<EscrowTransferReceipt> {
-    const smartAccount = await this.getSmartAccount();
+    // const smartAccount = await this.getSmartAccount();
     const normalizedEmail = input.recipientEmail.trim().toLowerCase();
     const recipientHash = this.computeRecipientHash(normalizedEmail);
     const amountAtomic = parseUnits(input.amount, input.decimals);
@@ -144,7 +144,7 @@ class SharedEscrowDriver {
   }
 
   async claimTransfer(transferId: Hex, recipientAddress: `0x${string}`, recipientEmail: string): Promise<EscrowClaimReceipt> {
-    const smartAccount = await this.getSmartAccount();
+    // const smartAccount = await this.getSmartAccount();
     const recipientHash = this.computeRecipientHash(recipientEmail.trim().toLowerCase());
 
     const claimCalls = [
@@ -164,7 +164,7 @@ class SharedEscrowDriver {
   }
 
   async refundTransfer(transferId: Hex, refundAddress: `0x${string}`): Promise<EscrowRefundReceipt> {
-    const smartAccount = await this.getSmartAccount();
+    // const smartAccount = await this.getSmartAccount();
 
     const refundCalls = [
       {

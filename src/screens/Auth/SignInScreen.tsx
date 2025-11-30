@@ -26,13 +26,18 @@ export const SignInScreen: React.FC = () => {
   const [email, setEmail] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
 
-  const handleEmailLogin = async () => {
-    if (!email.trim()) return;
-    await login("email_passwordless", email.trim());
+  const handleWalletConnect = async () => {
+    // Open Reown AppKit modal - users can connect existing wallets or create new ones
+    await login();
   };
 
-  const handleGoogleLogin = async () => await login("google");
-  const handleAppleLogin = async () => await login("apple");
+  const handleEmailLogin = async () => {
+    if (!email.trim()) return;
+    // For now, just open the wallet modal
+    // In the future, this could trigger email-based wallet creation
+    setModalVisible(false);
+    await login();
+  };
 
   if (isConnected && profile) {
     return (
@@ -54,32 +59,20 @@ export const SignInScreen: React.FC = () => {
       >
         <View style={styles.bottomContent}>
           <View style={styles.buttonSection}>
-            {Platform.OS === "android" && (
-              <PrimaryButton
-                title="Continue with Google"
-                onPress={handleGoogleLogin}
-                loading={loading}
-                disabled={loading}
-                style={styles.socialButton}
-              />
-            )}
-
-            {Platform.OS === "ios" && (
-              <PrimaryButton
-                title="Continue with Apple"
-                onPress={handleAppleLogin}
-                loading={loading}
-                disabled={loading}
-                style={[styles.socialButton, { backgroundColor: "#000" }]}
-              />
-            )}
+            <PrimaryButton
+              title="Create Wallet"
+              onPress={handleWalletConnect}
+              loading={loading}
+              disabled={loading}
+              style={styles.socialButton}
+            />
 
             <TouchableOpacity
               style={styles.emailOutlineBtn}
               onPress={() => setModalVisible(true)}
               disabled={loading}
             >
-              <Text style={styles.emailOutlineText}>Continue with Email</Text>
+              <Text style={styles.emailOutlineText}>Sign in with Email</Text>
             </TouchableOpacity>
 
             {error && <Text style={styles.errorText}>{error}</Text>}
@@ -93,7 +86,7 @@ export const SignInScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* MODAL POPUP */}
+        {/* EMAIL MODAL */}
         <Modal
           transparent
           visible={modalVisible}
@@ -107,6 +100,7 @@ export const SignInScreen: React.FC = () => {
               </TouchableOpacity>
 
               <Text style={styles.modalTitle}>Sign in with Email</Text>
+              <Text style={styles.modalSubtitle}>We'll create a secure wallet for you</Text>
 
               <TextInput
                 style={styles.input}
@@ -212,6 +206,19 @@ const createStyles = (colors: ColorPalette) =>
       marginTop: 8,
       fontSize: 14,
     },
+    instructionText: {
+      color: colors.textPrimary,
+      textAlign: "center",
+      fontSize: 18,
+      fontWeight: "600",
+      marginBottom: 16,
+    },
+    helperText: {
+      color: colors.textSecondary,
+      textAlign: "center",
+      fontSize: 13,
+      marginTop: 12,
+    },
 
     /** MODAL **/
     modalOverlay: {
@@ -233,6 +240,12 @@ const createStyles = (colors: ColorPalette) =>
       fontSize: 18,
       fontWeight: "600",
       color: colors.textPrimary,
+    },
+    modalSubtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: 8,
     },
     closeButton: {
       position: "absolute",
