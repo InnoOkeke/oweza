@@ -27,7 +27,6 @@ const QuoteSchema = z.object({
 });
 
 const providerKeyMap: Partial<Record<ProviderId, string>> = {
-  coinbase: process.env.COINBASE_API_KEY,
   moonpay: process.env.MOONPAY_API_KEY,
   transak: process.env.TRANSAK_API_KEY,
   alchemy_pay: process.env.ALCHEMY_PAY_API_KEY,
@@ -143,8 +142,6 @@ async function buildQuoteForProvider(
         return await fetchTransakQuote(provider, context, fallback);
       case "paycrest":
         return await fetchPaycrestQuote(provider, context, fallback);
-      case "coinbase":
-        return { ...fallback, totalFeeUsd: Math.max(fallback.totalFeeUsd - 0.5, 0) };
       default:
         return fallback;
     }

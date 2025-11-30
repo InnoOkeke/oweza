@@ -9,7 +9,7 @@ import mongoDb from "../src/services/mongoDatabase";
 import { userDirectoryService } from "../src/services/UserDirectoryService";
 import { pendingTransferService } from "../src/services/PendingTransferService";
 import { CryptoGift, GiftStatus, GiftTheme } from "../src/types/database";
-import { USDC_TOKEN_ADDRESS, USDC_DECIMALS } from "../src/config/coinbase.server";
+import { CUSD_TOKEN_ADDRESS, CUSD_DECIMALS } from "../src/config/celo.server";
 import { generateGiftCode } from "../src/utils/giftCode";
 
 const CreateGiftSchema = z.object({
@@ -90,9 +90,9 @@ export default async function handler(req: Request, res: Response) {
           senderUserId: data.senderUserId,
           amount: data.amount,
           token: data.token,
-          tokenAddress: USDC_TOKEN_ADDRESS,
+          tokenAddress: CUSD_TOKEN_ADDRESS,
           chain: data.chain,
-          decimals: USDC_DECIMALS,
+          decimals: CUSD_DECIMALS,
           message: data.message,
         });
 

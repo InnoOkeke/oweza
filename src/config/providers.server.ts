@@ -20,7 +20,6 @@ const normalize = (value?: string | null) => {
 
 const buildProviderSecrets = (): ProviderSecretMap => {
   const apiKeys: ProviderSecrets = {
-    coinbase: normalize(process.env.COINBASE_API_KEY),
     moonpay: normalize(process.env.MOONPAY_API_KEY),
     transak: normalize(process.env.TRANSAK_API_KEY),
     alchemy_pay: normalize(process.env.ALCHEMY_PAY_API_KEY),

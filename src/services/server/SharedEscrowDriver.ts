@@ -132,19 +132,15 @@ class SharedEscrowDriver {
       },
     ];
 
-    const userOp: UserOpResult = await this.cdp.evm.sendUserOperation({
-      smartAccount: smartAccount as any,
-      network: this.network,
-      paymasterUrl: this.paymasterUrl,
-      calls: createCalls as any,
-    } as any);
-
-    return {
-      transferId,
-      recipientHash,
-      expiry,
-      userOpHash: userOp.userOpHash,
-    };
+    // TODO: Implement with Celo native transactions (removed CDP SDK)
+    throw new Error("createTransfer not yet implemented with Celo native transactions");
+    
+    // return {
+    //   transferId,
+    //   recipientHash,
+    //   expiry,
+    //   userOpHash: "0x" as Hex,
+    // };
   }
 
   async claimTransfer(transferId: Hex, recipientAddress: `0x${string}`, recipientEmail: string): Promise<EscrowClaimReceipt> {
@@ -161,14 +157,10 @@ class SharedEscrowDriver {
       },
     ];
 
-    const userOp: UserOpResult = await this.cdp.evm.sendUserOperation({
-      smartAccount: smartAccount as any,
-      network: this.network,
-      paymasterUrl: this.paymasterUrl,
-      calls: claimCalls as any,
-    } as any);
-
-    return { transferId, userOpHash: userOp.userOpHash };
+    // TODO: Implement with Celo native transactions (removed CDP SDK)
+    throw new Error("claimTransfer not yet implemented with Celo native transactions");
+    
+    // return { transferId, userOpHash: "0x" as Hex };
   }
 
   async refundTransfer(transferId: Hex, refundAddress: `0x${string}`): Promise<EscrowRefundReceipt> {
@@ -184,14 +176,10 @@ class SharedEscrowDriver {
       },
     ];
 
-    const userOp: UserOpResult = await this.cdp.evm.sendUserOperation({
-      smartAccount: smartAccount as any,
-      network: this.network,
-      paymasterUrl: this.paymasterUrl,
-      calls: refundCalls as any,
-    } as any);
-
-    return { transferId, userOpHash: userOp.userOpHash };
+    // TODO: Implement with Celo native transactions (removed CDP SDK)
+    throw new Error("refundTransfer not yet implemented with Celo native transactions");
+    
+    // return { transferId, userOpHash: "0x" as Hex };
   }
 
   async loadOnchainTransfer(transferId: Hex): Promise<OnchainTransferState | null> {
@@ -254,17 +242,10 @@ class SharedEscrowDriver {
     ) as Hex;
   }
 
-  private async getSmartAccount() {
-    if (!this.smartAccountPromise) {
-      this.smartAccountPromise = this.resolveSmartAccount();
-    }
-    return this.smartAccountPromise;
-  }
-
-  private async resolveSmartAccount() {
-    const owner = await this.cdp.evm.getOrCreateAccount({ name: this.backendAccountName });
-    return this.cdp.evm.getOrCreateSmartAccount({ name: this.backendSmartAccountName, owner });
-  }
+  // TODO: Implement smart account management with Celo native approach
+  // private async getSmartAccount() {
+  //   throw new Error("Smart account not yet implemented with Celo native transactions");
+  // }
 }
 
 export const sharedEscrowDriver = new SharedEscrowDriver();
