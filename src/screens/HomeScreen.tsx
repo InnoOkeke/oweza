@@ -584,7 +584,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   <Text style={styles.walletLabel}>📍 Wallet</Text>
                   <Text style={styles.walletAddress}>
                     {profile && profile.walletAddress
-                      ? hasBaseWallet
+                      ? hasCeloWallet
                         ? formatShortAddress(profile.walletAddress)
                         : "Celo wallet pending"
                       : "-"}
@@ -693,7 +693,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               </View>
 
               <FlatList
-                data={hasBaseWallet ? activities.slice(0, 5) : []}
+                data={hasCeloWallet ? activities.slice(0, 5) : []}
                 keyExtractor={(item) => item.id}
                 renderItem={(info) => {
                   const item = info.item;
@@ -713,7 +713,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 contentContainerStyle={styles.listContentHome}
                 ListEmptyComponent={
                   <Text style={styles.emptyState}>
-                    {!hasBaseWallet
+                    {!hasCeloWallet
                       ? "Connect your wallet to view transactions"
                       : activities.length === 0
                         ? "No transactions yet"

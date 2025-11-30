@@ -36,35 +36,74 @@ app.use('/api/send-email', sendEmailHandler);
 app.use('/api/tips', tipsHandler);
 app.use('/api/transfers', transfersHandler);
 app.use('/api/users', usersHandler);
-app.use('/api/web', webRouter);
 app.use('/api/cron/process-expiry', processExpiryHandler);
 app.use('/api/cron/send-reminders', sendRemindersHandler);
 app.use('/api/international/quotes', internationalQuotesHandler);
 app.use('/api/international/transfers', internationalTransfersHandler);
+
+// Mount web pages at root level (gift, tip, invoice, claim pages)
+app.use('/', webRouter);
+
+// Serve static files from public directory
+app.use(express.static('public'));
 
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'Oweza API',
-    version: '1.0.0'
+    version: '1.0.0',
+    endpoints: {
+      api: '/api',
+      health: '/api/health',
+      web: {
+        gifts: '/gift/:giftId',
+        invoices: '/invoice/:invoiceId',
+        tips: '/tip/:jarId'
+      }
+    }
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ success: false, error: 'Not found' });
+// 404 handler for API routes only
+app.use('/api/*', (_req, res) => {
+  res.status(404).json({ success: false, error: 'API endpoint not found' });
+});
+
+// 404 handler for everything else
+app.use((_req, res) => {
+  res.status(404).send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>404 - Oweza</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { font-family: system-ui; text-align: center; padding: 50px; background: #f5f5f5; }
+        h1 { color: #333; }
+        a { color: #0066cc; text-decoration: none; }
+      </style>
+    </head>
+    <body>
+      <h1>404 - Page Not Found</h1>
+      <p>The page you're looking for doesn't exist.</p>
+      <a href="/">Go to Home</a>
+    </body>
+    </html>
+  `);
 });
 
 // Error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Server error:', err);
   res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 MetaSend API server running on port ${PORT}`);
+  console.log(`🚀 Oweza API & Web server running on port ${PORT}`);
+  console.log(`📡 API: http://localhost:${PORT}/api`);
+  console.log(`🌐 Web: http://localhost:${PORT}`);
 });
 
 export default app;

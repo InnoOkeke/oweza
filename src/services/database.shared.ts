@@ -26,7 +26,7 @@ export class InMemoryDatabase {
   async getUserByWalletAddress(walletAddress: string): Promise<User | null> {
     const lowerWallet = walletAddress.toLowerCase();
     for (const user of this.users.values()) {
-      if (user.wallets?.base?.toLowerCase() === lowerWallet) {
+      if (user.wallets?.celo?.toLowerCase() === lowerWallet) {
         return user;
       }
     }

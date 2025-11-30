@@ -91,7 +91,7 @@ async function handleClaim(transferId: string, res: Response) {
       return res.status(400).send(getErrorPage("This transfer has expired"));
     }
 
-    const deepLink = `metasend://claim/${transferId}`;
+    const deepLink = `oweza://claim/${transferId}`;
     return res.status(200).send(getClaimPage(transfer, deepLink));
   } catch (error) {
     console.error("Claim error:", error);
@@ -105,22 +105,23 @@ async function handlePayment(requestId: string, res: Response) {
   }
 
   try {
-    const request = await mongoDb.getPaymentRequestById(requestId);
+    // Payment requests removed - redirect to invoices
+    const invoice = await mongoDb.getInvoiceById(requestId);
 
-    if (!request) {
-      return res.status(404).send(getErrorPage("Payment request not found"));
+    if (!invoice) {
+      return res.status(404).send(getErrorPage("Invoice not found"));
     }
 
-    if (request.status === "paid") {
+    if (invoice.status === "paid") {
       return res.status(200).send(getPaidPage());
     }
 
-    if (request.status === "cancelled") {
-      return res.status(400).send(getErrorPage("This payment request has been cancelled"));
+    if (invoice.status === "cancelled") {
+      return res.status(400).send(getErrorPage("This invoice has been cancelled"));
     }
 
-    const deepLink = `metasend://pay/${requestId}`;
-    return res.status(200).send(getPaymentPage(request, deepLink));
+    const deepLink = `oweza://pay/${requestId}`;
+    return res.status(200).send(getPaymentPage(invoice, deepLink));
   } catch (error) {
     console.error("Payment error:", error);
     return res.status(500).send(getErrorPage("Internal server error"));
@@ -153,7 +154,7 @@ async function handleGift(giftId: string, res: Response) {
 
     const theme = GIFT_THEMES[gift.theme] || GIFT_THEMES.custom;
     // Use claim deep link so the app opens ClaimScreen directly
-    const deepLink = `metasend://claim/${giftId}`;
+    const deepLink = `oweza://claim/${giftId}`;
     return res.status(200).send(getGiftPage(gift, deepLink, theme));
   } catch (error) {
     console.error("Gift error:", error);
@@ -177,7 +178,7 @@ async function handleTip(jarId: string, res: Response) {
       return res.status(400).send(getErrorPage("This tip jar is no longer accepting tips"));
     }
 
-    const deepLink = `metasend://tip/${jarId}`;
+    const deepLink = `oweza://tip/${jarId}`;
     return res.status(200).send(getTipPage(jar, deepLink));
   } catch (error) {
     console.error("Tip error:", error);
@@ -192,7 +193,7 @@ function getClaimPage(transfer: any, deepLink: string) {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Claim ${transfer.amount} ${transfer.token} - MetaSend</title>
+      <title>Claim ${transfer.amount} ${transfer.token} - Oweza</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -264,14 +265,14 @@ function getClaimPage(transfer: any, deepLink: string) {
         <div class="sender">from ${transfer.senderName || transfer.senderEmail}</div>
         ${transfer.message ? `<div class="message">"${transfer.message}"</div>` : ''}
         
-        <a href="metasend://claim/${transfer.transferId}" class="button" id="openAppBtn">
-          Open MetaSend App
+        <a href="oweza://claim/${transfer.transferId}" class="button" id="openAppBtn">
+          Open Oweza App
         </a>
-        <a href="https://apps.apple.com/app/metasend" class="button store hidden" id="appStoreBtn">
+        <a href="https://apps.apple.com/app/oweza" class="button store hidden" id="appStoreBtn">
           <span>📱</span>
           <span>Download on App Store</span>
         </a>
-        <a href="https://play.google.com/store/apps/details?id=com.kellonapp.metasend" class="button store hidden" id="playStoreBtn">
+        <a href="https://play.google.com/store/apps/details?id=com.oweza.app" class="button store hidden" id="playStoreBtn">
           <span>🤖</span>
           <span>Get it on Google Play</span>
         </a>
@@ -279,13 +280,13 @@ function getClaimPage(transfer: any, deepLink: string) {
         <div class="info">
           <div style="font-weight: 600; margin-bottom: 15px;">How to claim:</div>
           <ol class="steps">
-            <li>Download MetaSend if you don't have it yet</li>
+            <li>Download Oweza if you don't have it yet</li>
             <li>Sign in with <strong>${transfer.recipientEmail}</strong></li>
             <li>Your funds will appear automatically in your wallet</li>
           </ol>
         </div>
         <div class="expires">⏰ Expires: ${new Date(transfer.expiresAt).toLocaleDateString()}</div>
-        <div class="footer">Powered by <strong>MetaSend</strong></div>
+        <div class="footer">Powered by <strong>Oweza</strong></div>
       </div>
 
       <script>
@@ -317,12 +318,12 @@ function getClaimPage(transfer: any, deepLink: string) {
           setTimeout(function() {
             if (document.hidden) return; // App opened successfully
             
-            if (isIOS && confirm('MetaSend app not installed. Download from App Store?')) {
+            if (isIOS && confirm('Oweza app not installed. Download from App Store?')) {
               window.location.href = appStoreBtn.href;
-            } else if (isAndroid && confirm('MetaSend app not installed. Download from Google Play?')) {
+            } else if (isAndroid && confirm('Oweza app not installed. Download from Google Play?')) {
               window.location.href = playStoreBtn.href;
             } else if (!isIOS && !isAndroid) {
-              alert('Please download MetaSend from your device\\'s app store to claim your funds.');
+              alert('Please download Oweza from your device\\'s app store to claim your funds.');
             }
           }, 2000);
         });
@@ -339,7 +340,7 @@ function getPaymentPage(request: any, deepLink: string) {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Pay ${request.amount} ${request.token} - MetaSend</title>
+      <title>Pay ${request.amount} ${request.token} - Oweza</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -406,17 +407,17 @@ function getPaymentPage(request: any, deepLink: string) {
         <div class="from">from ${request.creatorName || request.creatorEmail}</div>
         <div class="description"><strong>Description:</strong><br>${request.description}</div>
         
-        <a href="${deepLink}" class="button" id="openAppBtn">Pay with MetaSend</a>
-        <a href="https://apps.apple.com/app/metasend" class="button store hidden" id="appStoreBtn">
+        <a href="${deepLink}" class="button" id="openAppBtn">Pay with Oweza</a>
+        <a href="https://apps.apple.com/app/oweza" class="button store hidden" id="appStoreBtn">
           <span>📱</span>
           <span>Download on App Store</span>
         </a>
-        <a href="https://play.google.com/store/apps/details?id=com.kellonapp.metasend" class="button store hidden" id="playStoreBtn">
+        <a href="https://play.google.com/store/apps/details?id=com.oweza.app" class="button store hidden" id="playStoreBtn">
           <span>🤖</span>
           <span>Get it on Google Play</span>
         </a>
 
-        <div class="footer">Powered by <strong>MetaSend</strong></div>
+        <div class="footer">Powered by <strong>Oweza</strong></div>
       </div>
 
       <script>
@@ -448,12 +449,12 @@ function getPaymentPage(request: any, deepLink: string) {
           setTimeout(function() {
             if (document.hidden) return; // App opened successfully
             
-            if (isIOS && confirm('MetaSend app not installed. Download from App Store?')) {
+            if (isIOS && confirm('Oweza app not installed. Download from App Store?')) {
               window.location.href = appStoreBtn.href;
-            } else if (isAndroid && confirm('MetaSend app not installed. Download from Google Play?')) {
+            } else if (isAndroid && confirm('Oweza app not installed. Download from Google Play?')) {
               window.location.href = playStoreBtn.href;
             } else if (!isIOS && !isAndroid) {
-              alert('Please download MetaSend from your device\\'s app store to pay.');
+              alert('Please download Oweza from your device\\'s app store to pay.');
             }
           }, 2000);
         });
@@ -473,7 +474,7 @@ function getTipPage(jar: any, deepLink: string) {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${jar.title} - MetaSend</title>
+      <title>${jar.title} - Oweza</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -606,20 +607,20 @@ function getTipPage(jar: any, deepLink: string) {
         </div>
 
         <a href="${deepLink}" class="button" id="openAppBtn">Send a Tip 🎁</a>
-        <a href="https://apps.apple.com/app/metasend" class="button store hidden" id="appStoreBtn">
+        <a href="https://apps.apple.com/app/oweza" class="button store hidden" id="appStoreBtn">
           <span>📱</span>
           <span>Download on App Store</span>
         </a>
-        <a href="https://play.google.com/store/apps/details?id=com.kellonapp.metasend" class="button store hidden" id="playStoreBtn">
+        <a href="https://play.google.com/store/apps/details?id=com.oweza.app" class="button store hidden" id="playStoreBtn">
           <span>🤖</span>
           <span>Get it on Google Play</span>
         </a>
         
         <div class="qr-placeholder">
-          Open in MetaSend App to pay with Crypto, Card, or Bank Transfer
+          Open in Oweza App to pay with Crypto, Card, or Bank Transfer
         </div>
 
-        <div class="footer">Powered by <strong>MetaSend</strong></div>
+        <div class="footer">Powered by <strong>Oweza</strong></div>
       </div>
 
       <script>
@@ -651,12 +652,12 @@ function getTipPage(jar: any, deepLink: string) {
           setTimeout(function() {
             if (document.hidden) return; // App opened successfully
             
-            if (isIOS && confirm('MetaSend app not installed. Download from App Store?')) {
+            if (isIOS && confirm('Oweza app not installed. Download from App Store?')) {
               window.location.href = appStoreBtn.href;
-            } else if (isAndroid && confirm('MetaSend app not installed. Download from Google Play?')) {
+            } else if (isAndroid && confirm('Oweza app not installed. Download from Google Play?')) {
               window.location.href = playStoreBtn.href;
             } else if (!isIOS && !isAndroid) {
-              alert('Please download MetaSend from your device\\'s app store to send a tip.');
+              alert('Please download Oweza from your device\\'s app store to send a tip.');
             }
           }, 2000);
         });
@@ -677,7 +678,7 @@ function getGiftPage(
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${theme.emoji} Claim your gift - MetaSend</title>
+      <title>${theme.emoji} Claim your gift - Oweza</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -748,18 +749,18 @@ function getGiftPage(
         <div class="sender">from ${gift.senderName || gift.senderEmail}</div>
         ${gift.message ? `<div class="message">"${gift.message}"</div>` : ""}
         
-        <a href="${deepLink}" class="button" id="openAppBtn">Open MetaSend App</a>
-        <a href="https://apps.apple.com/app/metasend" class="button store hidden" id="appStoreBtn">
+        <a href="${deepLink}" class="button" id="openAppBtn">Open Oweza App</a>
+        <a href="https://apps.apple.com/app/oweza" class="button store hidden" id="appStoreBtn">
           <span>📱</span>
           <span>Download on App Store</span>
         </a>
-        <a href="https://play.google.com/store/apps/details?id=com.kellonapp.metasend" class="button store hidden" id="playStoreBtn">
+        <a href="https://play.google.com/store/apps/details?id=com.oweza.app" class="button store hidden" id="playStoreBtn">
           <span>🤖</span>
           <span>Get it on Google Play</span>
         </a>
 
         <p class="note">Need the app? Download it to claim your gift.</p>
-        <div class="footer">Powered by <strong>MetaSend</strong></div>
+        <div class="footer">Powered by <strong>Oweza</strong></div>
       </div>
 
       <script>
@@ -791,12 +792,12 @@ function getGiftPage(
           setTimeout(function() {
             if (document.hidden) return; // App opened successfully
             
-            if (isIOS && confirm('MetaSend app not installed. Download from App Store?')) {
+            if (isIOS && confirm('Oweza app not installed. Download from App Store?')) {
               window.location.href = appStoreBtn.href;
-            } else if (isAndroid && confirm('MetaSend app not installed. Download from Google Play?')) {
+            } else if (isAndroid && confirm('Oweza app not installed. Download from Google Play?')) {
               window.location.href = playStoreBtn.href;
             } else if (!isIOS && !isAndroid) {
-              alert('Please download MetaSend from your device\\'s app store to claim your gift.');
+              alert('Please download Oweza from your device\\'s app store to claim your gift.');
             }
           }, 2000);
         });
@@ -813,7 +814,7 @@ function getInfoPage(title: string, message: string, emoji = "ℹ️") {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${title} - MetaSend</title>
+      <title>${title} - Oweza</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -857,7 +858,7 @@ function getPaidPage() {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Payment Completed - MetaSend</title>
+      <title>Payment Completed - Oweza</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -900,7 +901,7 @@ function getErrorPage(message: string) {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Error - MetaSend</title>
+      <title>Error - Oweza</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {

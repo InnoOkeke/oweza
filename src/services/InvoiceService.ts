@@ -23,7 +23,7 @@ export const CreateInvoiceSchema = z.object({
   tax: z.string().optional(),
   total: z.string(),
   token: z.string(),
-  chain: z.enum(["base"]),
+  chain: z.enum(["celo"]),
   dueDate: z.string(), // ISO date
   notes: z.string().optional(),
 });

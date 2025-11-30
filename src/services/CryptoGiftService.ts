@@ -23,7 +23,7 @@ export const CreateGiftSchema = z.object({
   recipientName: z.string().optional(),
   amount: z.string(),
   token: z.string(),
-  chain: z.enum(["base"]),
+  chain: z.enum(["celo"]),
   theme: z.enum(["birthday", "anniversary", "holiday", "thank_you", "congratulations", "red_envelope", "custom"]),
   message: z.string().max(500).optional(),
   expiresInDays: z.number().optional().default(30),

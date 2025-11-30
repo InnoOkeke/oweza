@@ -115,6 +115,13 @@ export const ClaimScreen: React.FC = () => {
     );
   }
 
+  const calculateDaysRemaining = (expiresAt: string): number => {
+    const now = Date.now();
+    const expires = new Date(expiresAt).getTime();
+    const diff = expires - now;
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
+
   if (!isConnected) {
     return (
       <View style={styles.container}>
@@ -126,12 +133,26 @@ export const ClaimScreen: React.FC = () => {
               {transfer.amount} {transfer.token}
             </Text>
             <Text style={styles.fromText}>
+              from {transfer.senderName || transfer.senderEmail}
+            </Text>
 
-              <View style={styles.infoBox}>
-                <Text style={styles.infoText}>
-                  ⏰ This transfer expires in {calculateDaysRemaining(transfer.expiresAt)} days
-                </Text>
-              </View>
+            <View style={styles.infoBox}>
+              <Text style={styles.infoText}>
+                ⏰ This transfer expires in {calculateDaysRemaining(transfer.expiresAt)} days
+              </Text>
+            </View>
+
+            <View style={styles.divider} />
+
+            <Text style={styles.instructionTitle}>Sign in to claim</Text>
+            <Text style={styles.instruction}>
+              Please sign in with <Text style={styles.bold}>{transfer.recipientEmail}</Text> to claim this transfer.
+            </Text>
+
+            <PrimaryButton
+              title="Sign In"
+              onPress={() => navigation.navigate("Home")}
+            />
           </View>
         </ScrollView>
       </View>
@@ -145,41 +166,76 @@ export const ClaimScreen: React.FC = () => {
     return (
       <View style={styles.container}>
         <View style={styles.errorCard}>
-          <Text style={styles.detailValue}>{transfer.chain.toUpperCase()}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Sent to:</Text>
-          <Text style={styles.detailValue}>{transfer.recipientEmail}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Expires in:</Text>
-          <Text style={styles.detailValue}>
-            {calculateDaysRemaining(transfer.expiresAt)} days
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorTitle}>Email Mismatch</Text>
+          <Text style={styles.errorMessage}>
+            This transfer is for <Text style={styles.bold}>{transfer.recipientEmail}</Text>, but you're signed in as{" "}
+            <Text style={styles.bold}>{profile?.email}</Text>.
           </Text>
+          <Text style={styles.errorMessage}>
+            Please sign in with the correct email to claim this transfer.
+          </Text>
+          <PrimaryButton
+            title="Go to Home"
+            onPress={() => navigation.navigate("Home")}
+          />
         </View>
       </View>
+    );
+  }
 
-          {
-      transfer.message && (
-        <View style={styles.messageBox}>
-          <Text style={styles.messageLabel}>Message from sender:</Text>
-          <Text style={styles.messageText}>{transfer.message}</Text>
+  // User can claim
+  return (
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.card}>
+          <Text style={styles.icon}>💰</Text>
+          <Text style={styles.title}>Ready to Claim!</Text>
+          <Text style={styles.amount}>
+            {transfer.amount} {transfer.token}
+          </Text>
+          <Text style={styles.fromText}>
+            from {transfer.senderName || transfer.senderEmail}
+          </Text>
+
+          <View style={styles.divider} />
+
+          <View style={styles.detailsSection}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Network:</Text>
+              <Text style={styles.detailValue}>{transfer.chain.toUpperCase()}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Sent to:</Text>
+              <Text style={styles.detailValue}>{transfer.recipientEmail}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Expires in:</Text>
+              <Text style={styles.detailValue}>
+                {calculateDaysRemaining(transfer.expiresAt)} days
+              </Text>
+            </View>
+          </View>
+
+          {transfer.message && (
+            <View style={styles.messageBox}>
+              <Text style={styles.messageLabel}>Message from sender:</Text>
+              <Text style={styles.messageText}>{transfer.message}</Text>
+            </View>
+          )}
+
+          <PrimaryButton
+            title={claimMutation.isPending ? "Claiming..." : "Claim Now"}
+            onPress={() => claimMutation.mutate()}
+            disabled={claimMutation.isPending}
+          />
         </View>
-      )
-    }
+      </ScrollView>
+    </View>
+  );
+};
 
-    <PrimaryButton
-      title={claimMutation.isPending ? "Claiming..." : "Claim Now"}
-      onPress={() => claimMutation.mutate()}
-
-      const calculateDaysRemaining= (expiresAt: string): number => {
-        const now = Date.now();
-        const expires = new Date(expiresAt).getTime();
-        const diff = expires - now;
-        return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-      };
-
-    const createStyles = (colors: ColorPalette) =>
+const createStyles = (colors: ColorPalette) =>
       StyleSheet.create({
         container: {
           flex: 1,

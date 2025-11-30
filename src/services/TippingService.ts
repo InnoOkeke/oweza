@@ -42,7 +42,7 @@ export const SendTipSchema = z.object({
   jarId: z.string().optional(),
   amount: z.string(),
   token: z.string(),
-  chain: z.enum(["base"]),
+  chain: z.enum(["celo"]),
   message: z.string().max(280).optional(),
   isAnonymous: z.boolean().optional().default(false),
 });

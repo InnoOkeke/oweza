@@ -144,8 +144,6 @@ async function submitInternationalTransfer(payload: TransferPayload): Promise<Tr
         payload.payoutMethod,
       );
       return buildResult("paycrest", "Paycrest", "https://merchant.paycrest.io/transactions");
-    case "celo":
-      return buildResult("celo", "Celo", "https://explorer.celo.org");
     default:
       return simulateSubmission(payload.providerId, "placeholder-provider");
   }

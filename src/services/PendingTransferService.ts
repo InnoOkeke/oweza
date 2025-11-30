@@ -38,7 +38,7 @@ export const CreatePendingTransferSchema = z.object({
   amount: z.string(),
   token: z.string(),
   tokenAddress: z.string(),
-  chain: z.enum(["base"]),
+  chain: z.enum(["celo"]),
   decimals: z.number(),
   message: z.string().optional(),
 });

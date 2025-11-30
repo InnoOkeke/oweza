@@ -9,7 +9,8 @@ const { abi: SHARED_ESCROW_ABI } = SharedEscrowArtifact;
 const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
 const UINT96_MAX = (1n << 96n) - 1n;
 const UINT40_MAX = (1n << 40n) - 1n;
-type UserOpResult = Awaited<ReturnType<CdpClient["evm"]["sendUserOperation"]>>;
+// Type for user operation result (Celo native transactions)
+type UserOpResult = { hash: string };
 
 export type EscrowNetwork = "celo" | "celo-alfajores";
 
@@ -54,7 +55,7 @@ const NETWORK_CHAIN_MAP: Record<EscrowNetwork, typeof celo | typeof celoAlfajore
 };
 
 class SharedEscrowDriver {
-  private readonly cdp = new CdpClient();
+  // Removed CdpClient - using Celo native transactions
   private readonly network: EscrowNetwork;
   private readonly chain;
   private readonly paymasterUrl: string;
@@ -63,7 +64,6 @@ class SharedEscrowDriver {
   private readonly fundingWallet: `0x${string}`;
   private readonly expirySeconds: number;
   private readonly saltBytes32: Hex;
-  private smartAccountPromise?: ReturnType<CdpClient["evm"]["getOrCreateSmartAccount"]>;
   private publicClient;
   private readonly backendAccountName: string;
   private readonly backendSmartAccountName: string;

@@ -1,30 +1,33 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { createAppKit, AppKit } from '@reown/appkit-react-native';
-import { defaultWagmiConfig } from '@reown/appkit-wagmi';
 import { WagmiProvider, useAccount, useDisconnect, useWalletClient } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { celoSepolia } from 'viem/chains';
 import { REOWN_PROJECT_ID, APP_METADATA, CUSD_TOKEN_ADDRESS } from '../config/celo';
 import { registerUser } from "../services/api";
+import { http, createConfig } from 'wagmi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 1. Get projectId
 const projectId = REOWN_PROJECT_ID;
 
-// 2. Create config
+// 2. Create config for React Native
 const chains = [celoSepolia] as const;
 
-const wagmiConfig = defaultWagmiConfig({
+const wagmiConfig = createConfig({
     chains,
-    projectId,
-    metadata: APP_METADATA,
+    transports: {
+        [celoSepolia.id]: http(),
+    },
 });
 
-// 3. Create modal
+// 3. Create modal for React Native
 createAppKit({
     projectId,
     wagmiConfig,
-    defaultChain: celoSepolia,
+    metadata: APP_METADATA,
     enableAnalytics: true,
+    storage: AsyncStorage,
 });
 
 const queryClient = new QueryClient();

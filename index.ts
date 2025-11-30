@@ -4,7 +4,6 @@
 import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 import QuickCrypto, { install } from 'react-native-quick-crypto';
-import { Crypto } from '@peculiar/webcrypto';
 
 // Install react-native-quick-crypto polyfills
 install();
@@ -16,16 +15,6 @@ if (!(global as any).crypto) {
 } else {
   // If crypto exists, extend it with QuickCrypto.webcrypto properties
   Object.assign((global as any).crypto, QuickCrypto.webcrypto);
-}
-
-// Fallback: If QuickCrypto didn't provide subtle (or it's missing), use @peculiar/webcrypto
-if (!(global as any).crypto.subtle) {
-  const webCrypto = new Crypto();
-  (global as any).crypto.subtle = webCrypto.subtle;
-  // Also ensure getRandomValues is available if QuickCrypto didn't provide it
-  if (!(global as any).crypto.getRandomValues) {
-    (global as any).crypto.getRandomValues = webCrypto.getRandomValues.bind(webCrypto);
-  }
 }
 
 // Load our custom crypto polyfill for randomBytes (if needed as fallback)
