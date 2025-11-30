@@ -1,41 +1,15 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { AppKit } from '@reown/appkit-react-native';
-import { useAccount, useDisconnect, useWalletClient } from 'wagmi';
+import { Platform } from "react-native";
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
+import { useAppKit, useAccount as useAppKitAccount } from '@reown/appkit-react-native';
+import { useDisconnect, useWalletClient } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { celoSepolia } from 'viem/chains';
-import { REOWN_PROJECT_ID, APP_METADATA, CUSD_TOKEN_ADDRESS } from '../config/celo';
-import { registerUser } from "../services/api";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CUSD_TOKEN_ADDRESS } from '../config/celo';
+import { registerUser } from '../services/api';
 
-// Create a storage adapter that implements the required Storage interface
-const storageAdapter = {
-    async getItem(key: string): Promise<string | null> {
-        return await AsyncStorage.getItem(key);
-    },
-    async setItem(key: string, value: string): Promise<void> {
-        await AsyncStorage.setItem(key, value);
-    },
-    async removeItem(key: string): Promise<void> {
-        await AsyncStorage.removeItem(key);
-    },
-    async getKeys(): Promise<string[]> {
-        const keys = await AsyncStorage.getAllKeys();
-        return [...keys]; // Convert readonly array to mutable array
-    },
-    async getEntries(): Promise<[string, any][]> {
-        const keys = await AsyncStorage.getAllKeys();
-        const entries = await AsyncStorage.multiGet(keys);
-        return entries.map(([key, value]) => [key, value || '']) as [string, any][];
-    },
-};
-
-// 1. Get projectId
-const projectId = REOWN_PROJECT_ID;
-
-// 2. Create config for React Native using WagmiAdapter
-const chains = [celoSepolia] as const;
-
-// AppKit instance is created in `src/AppKitConfig.ts` and provided at the app root.
+WebBrowser.maybeCompleteAuthSession();
 
 const queryClient = new QueryClient();
 
@@ -53,7 +27,7 @@ export type AuthContextValue = {
     profile: UserProfile | null;
     isConnected: boolean;
     loading: boolean;
-    login: () => Promise<void>;
+    login: (provider: "google" | "apple" | "email_passwordless", email?: string) => Promise<void>;
     logout: () => Promise<void>;
     error: string | null;
     openAppKit: () => void;
@@ -63,43 +37,209 @@ export type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) => {
-    const { address, isConnected } = useAccount();
+    const { address, isConnected: walletConnected } = useAppKitAccount();
     const { disconnect } = useDisconnect();
     const { data: walletClient } = useWalletClient();
+    const { open } = useAppKit();
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
+    const [socialAuthData, setSocialAuthData] = useState<{
+        userId: string;
+        email: string;
+        displayName?: string;
+        photoUrl?: string;
+    } | null>(null);
 
-    // Mock login/logout for now as AppKit handles it via UI
+    // Google OAuth configuration
+    const googleDiscovery = AuthSession.useAutoDiscovery('https://accounts.google.com');
+    
+    const [googleRequest, googleResponse, googlePromptAsync] = AuthSession.useAuthRequest(
+        {
+            clientId: Platform.select({
+                android: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '',
+                ios: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '',
+                default: '',
+            }),
+            scopes: ['openid', 'profile', 'email'],
+            redirectUri: AuthSession.makeRedirectUri({
+                scheme: 'oweza',
+                path: 'auth'
+            }),
+        },
+        googleDiscovery
+    );
+
     const openAppKit = async () => {
-        // Placeholder for opening modal if needed programmatically
+        try {
+            await open();
+        } catch (err) {
+            console.error("Failed to open AppKit:", err);
+            setError("Failed to open wallet connection");
+        }
     };
 
+    const handleGoogleAuth = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const result = await googlePromptAsync();
+            
+            if (result.type === 'success') {
+                const { authentication } = result;
+                
+                // Fetch user info from Google
+                const userInfoResponse = await fetch(
+                    'https://www.googleapis.com/oauth2/v3/userinfo',
+                    {
+                        headers: { Authorization: `Bearer ${authentication?.accessToken}` },
+                    }
+                );
+                
+                const userInfo = await userInfoResponse.json();
+                
+                console.log('✅ Google authentication successful');
+                console.log('📧 User email:', userInfo.email);
+                
+                // Store social auth data temporarily
+                setSocialAuthData({
+                    userId: userInfo.sub,
+                    email: userInfo.email,
+                    displayName: userInfo.name,
+                    photoUrl: userInfo.picture,
+                });
+                
+                // Now open AppKit to create/connect smart wallet
+                console.log('🔐 Opening wallet connection...');
+                await open();
+            } else {
+                setError('Google authentication was cancelled');
+            }
+        } catch (err) {
+            console.error('❌ Google authentication failed:', err);
+            setError('Failed to authenticate with Google');
+            setLoading(false);
+        }
+    };
+
+    const handleAppleAuth = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            // Apple Sign In implementation would go here
+            // For now, show a placeholder
+            console.log('Apple Sign In not yet implemented');
+            setError('Apple Sign In coming soon');
+        } catch (err) {
+            console.error('❌ Apple authentication failed:', err);
+            setError('Failed to authenticate with Apple');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEmailAuth = async (email: string) => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            console.log('📧 Email authentication for:', email);
+            
+            // For now, we'll use email as the userId
+            // In production, you'd send a magic link or OTP
+            const userId = `email_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            
+            // Store email auth data temporarily
+            setSocialAuthData({
+                userId,
+                email,
+                displayName: email.split('@')[0],
+            });
+            
+            // Open AppKit to create/connect smart wallet
+            console.log('🔐 Opening wallet connection...');
+            await open();
+        } catch (err) {
+            console.error('❌ Email authentication failed:', err);
+            setError('Failed to authenticate with email');
+            setLoading(false);
+        }
+    };
+
+    const login = async (provider: "google" | "apple" | "email_passwordless", email?: string) => {
+        switch (provider) {
+            case "google":
+                await handleGoogleAuth();
+                break;
+            case "apple":
+                await handleAppleAuth();
+                break;
+            case "email_passwordless":
+                if (email) {
+                    await handleEmailAuth(email);
+                }
+                break;
+            default:
+                setError('Unknown authentication provider');
+        }
+    };
+
+    // Handle wallet connection after social auth
     useEffect(() => {
-        if (isConnected && address) {
-            const fetchProfile = async () => {
+        const handleWalletConnection = async () => {
+            if (walletConnected && address && socialAuthData && !profile) {
                 try {
-                    setLoading(true);
-                    const userProfile: UserProfile = {
-                        userId: address,
-                        email: "",
+                    console.log('💼 Wallet connected:', address);
+                    console.log('📝 Registering user with backend...');
+                    
+                    // Register user with backend
+                    const registeredUser = await registerUser({
+                        userId: socialAuthData.userId,
+                        email: socialAuthData.email,
+                        emailVerified: true,
                         walletAddress: address,
-                        displayName: "User",
-                        username: address.slice(0, 6),
+                        displayName: socialAuthData.displayName,
+                        photoUrl: socialAuthData.photoUrl,
+                    });
+                    
+                    console.log('✅ User registered successfully');
+                    
+                    // Create user profile
+                    const userProfile: UserProfile = {
+                        userId: socialAuthData.userId,
+                        email: socialAuthData.email,
+                        walletAddress: address,
+                        displayName: socialAuthData.displayName,
+                        photoUrl: socialAuthData.photoUrl,
+                        username: socialAuthData.email.split('@')[0],
                     };
+                    
                     setProfile(userProfile);
-                } catch (e) {
-                    console.error("Profile fetch error", e);
-                } finally {
+                    setIsConnected(true);
+                    setSocialAuthData(null); // Clear temporary data
+                    setLoading(false);
+                    
+                    console.log('🎉 Authentication complete!');
+                } catch (err) {
+                    console.error('❌ Failed to register user:', err);
+                    setError('Failed to complete registration');
                     setLoading(false);
                 }
-            };
-            fetchProfile();
-        } else {
-            setProfile(null);
-        }
-    }, [isConnected, address]);
+            } else if (walletConnected && address && profile && profile.walletAddress !== address) {
+                // Update wallet address if it changed
+                setProfile({
+                    ...profile,
+                    walletAddress: address,
+                });
+            }
+        };
+        
+        handleWalletConnection();
+    }, [walletConnected, address, socialAuthData, profile]);
 
     const sendUserOperation = async (calls: any[]): Promise<{ userOperationHash: string }> => {
         if (!walletClient) throw new Error("Wallet not connected");
@@ -129,17 +269,26 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
         }
     };
 
+    const logout = async () => {
+        setProfile(null);
+        setIsConnected(false);
+        setError(null);
+        if (walletConnected) {
+            disconnect();
+        }
+    };
+
     const value = useMemo(() => ({
         walletAddress: address || null,
         profile,
         isConnected,
         loading,
-        login: async () => { /* Trigger AppKit */ },
-        logout: async () => { await disconnect(); },
+        login,
+        logout,
         error,
         openAppKit,
         sendUserOperation
-    }), [address, profile, isConnected, loading, error, disconnect, walletClient]);
+    }), [address, profile, isConnected, loading, error, walletConnected, googleRequest]);
 
     return (
         <AuthContext.Provider value={value}>

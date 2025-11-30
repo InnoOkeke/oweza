@@ -4,34 +4,28 @@ import "./globals";
 import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { AppKitProvider } from "./src/providers/AppKitProvider";
 import { AppKitProvider as ReownAppKitProvider, AppKit } from '@reown/appkit-react-native';
 import { appKit } from './src/AppKitConfig';
-// Use runtime requires to avoid TypeScript definition mismatches for wagmi/viem
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-const wagmiPkg: any = require('wagmi');
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-const viemPkg: any = require('viem');
-const createPublicClient = viemPkg.createPublicClient;
-const http = viemPkg.http;
-const createWagmiConfig: any = wagmiPkg.createConfig;
-const WagmiConfig: any = wagmiPkg.WagmiConfig;
+import { createConfig, WagmiProvider } from 'wagmi';
+import { http } from 'viem';
 import { CELO_CHAIN, CELO_RPC_URL } from './src/config/celo';
 import { ThemeProvider, useTheme } from "./src/providers/ThemeProvider";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 
 
 export default function App() {
-  const publicClient = createPublicClient({ chain: CELO_CHAIN, transport: http(CELO_RPC_URL) });
-  const wagmiConfig = createWagmiConfig({ publicClient });
+  const wagmiConfig = createConfig({
+    chains: [CELO_CHAIN],
+    transports: {
+      [CELO_CHAIN.id]: http(CELO_RPC_URL)
+    }
+  });
 
   return (
     <ThemeProvider>
-      <WagmiConfig config={wagmiConfig}>
+      <WagmiProvider config={wagmiConfig}>
         <ReownAppKitProvider instance={appKit}>
           <AppKitProvider>
             <SafeAreaProvider>
@@ -41,7 +35,7 @@ export default function App() {
             </SafeAreaProvider>
           </AppKitProvider>
         </ReownAppKitProvider>
-      </WagmiConfig>
+      </WagmiProvider>
     </ThemeProvider>
   );
 }

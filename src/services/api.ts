@@ -53,14 +53,14 @@ async function apiRequest<T>(
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${API_KEY}`,
-    ...(options.headers || {}),
+    ...(options?.headers ?? {}),
   };
 
   console.log(`📡 API Request: ${endpoint}`, { url, method: options.method || 'GET' });
 
   try {
     const response = await fetch(url, {
-      ...options,
+      ...(options ?? {}),
       headers,
     });
 

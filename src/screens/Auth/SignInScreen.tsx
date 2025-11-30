@@ -83,6 +83,8 @@ export const SignInScreen: React.FC = () => {
             </TouchableOpacity>
 
             {error && <Text style={styles.errorText}>{error}</Text>}
+            
+            {loading && <Text style={styles.loadingText}>Setting up your wallet...</Text>}
           </View>
 
           <Text style={styles.disclaimer}>
@@ -203,6 +205,12 @@ const createStyles = (colors: ColorPalette) =>
       color: colors.error,
       textAlign: "center",
       marginTop: 12,
+    },
+    loadingText: {
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginTop: 8,
+      fontSize: 14,
     },
 
     /** MODAL **/

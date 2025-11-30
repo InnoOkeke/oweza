@@ -2,6 +2,7 @@ import "dotenv/config";
 
 export default ({ config }) => ({
   ...config,
+  scheme: "oweza",
   android: {
     package: "com.kellonapp.oweza",
   },
