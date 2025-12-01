@@ -142,15 +142,6 @@ Choose one email provider and set its API key:
 | `OWEZA_API_BASE_URL` | Backend API base URL |
 | `OWEZA_API_KEY` | Backend API authentication key |
 
-### Reown AppKit Setup
-
-1. Register your app at [Reown Cloud](https://cloud.reown.com/)
-2. Create a new project and get your Project ID
-3. Set the redirect URI to: `oweza://` (or your custom scheme)
-4. Ensure `app.json` uses the same scheme value
-5. Add your Project ID to `.env` as `REOWN_PROJECT_ID`
-
-**Note:** The `.env` file is gitignored to protect your secrets. Never commit credentials to version control.
 
 ## Project Structure
 
@@ -209,12 +200,6 @@ src/
 
 ➡️ **Render backend?** Follow `docs/render-deployment.md` for service provisioning and `docs/migrations/shared-escrow.md` for the step-by-step migration runbook.
 
-### Development Workflow
-
-- **Live Data Only:** Demo seeds have been removed—use Coinbase signup plus `npm run backfill` (with your own JSON payloads) if you need fixtures.
-- **Environment Variables:** All credentials are in `.env` (gitignored)
-- **TypeScript Strict Mode:** Full type safety throughout the codebase
-- **Service Layer:** Clean separation between UI and business logic
 
 ## License
 

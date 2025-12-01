@@ -46,7 +46,7 @@ Persists and queries transfer history records for the mobile app.
   "senderWallet": "0xabc...",
   "intent": {
     "recipientEmail": "friend@example.com",
-    "amountUsdc": 12.5,
+    "amountCusd": 12.5,
     "memo": "optional",
     "senderEmail": "you@example.com",
     "senderName": "You",

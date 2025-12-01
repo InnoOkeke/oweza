@@ -15,11 +15,13 @@ const badRequest = (res: Response, message: string) =>
 
 const TransferIntentSchema = z.object({
   recipientEmail: z.string().email(),
-  amountUsdc: z.number().nonnegative(),
+  amountCusd: z.number().nonnegative(),
   memo: z.string().optional(),
   senderEmail: z.string().email().optional(),
   senderName: z.string().optional(),
   senderUserId: z.string().optional(),
+  recipientAddress: z.string().optional(),
+  skipNotification: z.boolean().optional(),
 });
 
 const TransferRecordSchema = z.object({

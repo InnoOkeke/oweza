@@ -62,9 +62,18 @@ const apiRequest = async <T>(path: string, init?: RequestInit): Promise<T> => {
 };
 
 const persistTransferRecord = async (record: TransferRecord): Promise<void> => {
+  // Map amountCusd to amountUsdc for backend compatibility
+  const payload = {
+    ...record,
+    intent: {
+      ...record.intent,
+      amountUsdc: record.intent.amountCusd,
+    },
+  };
+
   await apiRequest<{ success: boolean }>("/api/transfers", {
     method: "POST",
-    body: JSON.stringify(record),
+    body: JSON.stringify(payload),
   });
 };
 
