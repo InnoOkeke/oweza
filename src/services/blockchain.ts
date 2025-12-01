@@ -125,6 +125,7 @@ export async function getCusdTransactions(
   limit: number = 50
 ): Promise<BlockchainTransaction[]> {
   try {
+    console.log('🔍 [blockchain] Fetching cUSD transactions for:', address);
     const currentBlock = await publicClient.getBlockNumber();
 
     // Fetch last ~10000 blocks (approximately 1 day on Celo)

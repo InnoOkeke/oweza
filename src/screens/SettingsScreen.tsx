@@ -1,7 +1,7 @@
 import React from "react";
 import { ScrollView, View, Text, TouchableOpacity, Alert } from "react-native";
 import { useTheme } from "../providers/ThemeProvider";
-import { useAuth } from "../providers/AppKitProvider";
+import { useAuth } from "../providers/Web3AuthProvider";
 import { spacing, typography } from "../utils/theme";
 import type { ColorPalette } from "../utils/theme";
 import type { ThemeScheme } from "../providers/ThemeProvider";

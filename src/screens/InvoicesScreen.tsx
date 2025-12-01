@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import * as LocalAuthentication from "expo-local-authentication";
 import { RootStackParamList } from "../navigation/RootNavigator";
-import { useAuth } from "../providers/AppKitProvider";
+import { useAuth } from "../providers/Web3AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { invoiceService } from "../services/InvoiceService";

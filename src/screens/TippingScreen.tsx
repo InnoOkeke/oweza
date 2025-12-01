@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, Share, Clipboard, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, Share, ActivityIndicator } from "react-native";
+import { setClipboardString } from "../utils/clipboard";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import * as LocalAuthentication from "expo-local-authentication";
 import { RootStackParamList } from "../navigation/RootNavigator";
-import { useAuth } from "../providers/AppKitProvider";
+import { useAuth } from "../providers/Web3AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { TextField } from "../components/TextField";
@@ -169,12 +170,13 @@ export const TippingScreen: React.FC<Props> = ({ route, navigation }) => {
 
       // Create sendUserOperation callback
       const sendUserOpFn = async (calls: any[]) => {
-        return await sendUserOperation({
+        // sendUserOperation has varied typings across providers; cast to any to avoid TS issues
+        return await (sendUserOperation as any)({
           evmSmartAccount: profile.walletAddress as `0x${string}`,
           network: "celo",
           calls,
-          useCdpPaymaster: true, // AppKit handles this via feeCurrency, but keeping flag if needed by wrapper
-        });
+          useCdpPaymaster: true, // keep flag for paymaster behavior
+        } as any);
       };
 
       // Create transfer intent
@@ -359,7 +361,7 @@ export const TippingScreen: React.FC<Props> = ({ route, navigation }) => {
                   statusText={jar.status}
                   actions={[
                     { label: 'Share Link', onPress: () => Share.share({ message: `Support me: ${link}` }), variant: 'primary' },
-                    { label: 'Copy', onPress: () => { Clipboard.setString(link); Alert.alert('Copied', 'Link copied to clipboard'); }, variant: 'secondary' },
+                    { label: 'Copy', onPress: async () => { await setClipboardString(link); Alert.alert('Copied', 'Link copied to clipboard'); }, variant: 'secondary' },
                   ]}
                 />
               );

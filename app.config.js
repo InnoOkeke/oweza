@@ -11,9 +11,6 @@ export default ({ config }) => ({
   },
   extra: {
     ...config.extra,
-    // Reown Configuration
-    reownProjectId: process.env.REOWN_PROJECT_ID || "",
-
     // Circle Configuration (legacy, may remove)
     circleApiKey: process.env.CIRCLE_API_KEY || "",
 
@@ -38,9 +35,12 @@ export default ({ config }) => ({
     mongodbUri: process.env.MONGODB_URI || "",
     owezaApiBaseUrl: process.env.OWEZA_API_BASE_URL || "",
     owezaApiKey: process.env.OWEZA_API_KEY || "",
-    // Legacy MetaSend keys removed; use OWEZA entries instead
-    // (kept for backward compatibility in older builds if needed)
-
+    // Web3Auth configuration (available at runtime via Constants.expoConfig.extra)
+    web3authClientId: process.env.WEB3AUTH_CLIENT_ID || "",
+    web3authRedirectUrl: process.env.WEB3AUTH_REDIRECT_URL || "oweza://auth",
+    web3authNetwork: process.env.WEB3AUTH_NETWORK || "sapphire_devnet",
+    web3authChainRpc: process.env.WEB3AUTH_CHAIN_RPC || "",
+    web3authChainId: process.env.WEB3AUTH_CHAIN_ID || "",
     eas: {
       projectId: process.env.EAS_PROJECT_ID || "",
     },

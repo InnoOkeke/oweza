@@ -16,18 +16,13 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { WebView } from "react-native-webview";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../providers/ThemeProvider";
-import { useAuth } from "../providers/AppKitProvider";
+import { useAuth } from "../providers/Web3AuthProvider";
 import { spacing, typography } from "../utils/theme";
 import { getUserLocation } from "../services/location";
 import {
   buildRampUrlWithSession,
   getAvailableProviders,
-  getCoinbasePaymentMethods,
-  fetchCoinbasePaymentMethods,
-  getPaymentMethodName,
-  getPaymentMethodDescription,
   getProviderInfo,
-  type PaymentMethod,
   type RampProvider,
 } from "../services/ramp";
 import { useToast } from "../utils/toast";
@@ -49,8 +44,8 @@ export const DepositScreen: React.FC<Props> = ({ navigation }) => {
   // Real provider integration
   const [availableProviders, setAvailableProviders] = useState<RampProvider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<RampProvider | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
-  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<PaymentMethod[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<any | null>(null);
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<any[]>([]);
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
   const [webViewLoading, setWebViewLoading] = useState(true);
@@ -171,22 +166,8 @@ export const DepositScreen: React.FC<Props> = ({ navigation }) => {
 
   // Fetch payment methods when Coinbase is selected
   useEffect(() => {
-    if (selectedProvider === "coinbase" && profile?.walletAddress) {
-      setLoadingPaymentMethods(true);
-      fetchCoinbasePaymentMethods("onramp", profile.walletAddress)
-        .then(methods => {
-          setAvailablePaymentMethods(methods);
-        })
-        .catch(error => {
-          console.error("Error fetching payment methods:", error);
-          setAvailablePaymentMethods(getCoinbasePaymentMethods("onramp"));
-        })
-        .finally(() => {
-          setLoadingPaymentMethods(false);
-        });
-    } else {
-      setAvailablePaymentMethods([]);
-    }
+    // No external payment-method integrations currently available.
+    setAvailablePaymentMethods([]);
   }, [selectedProvider, profile?.walletAddress]);
 
   const toggleDropdown = () => {
@@ -245,14 +226,14 @@ export const DepositScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  const handlePaymentMethodSelect = (method: PaymentMethod) => {
+  const handlePaymentMethodSelect = (method: any) => {
     setSelectedPaymentMethod(method);
     if (selectedProvider) {
       openRamp(selectedProvider, method);
     }
   };
 
-  const openRamp = async (provider: RampProvider, paymentMethod: PaymentMethod | null) => {
+  const openRamp = async (provider: RampProvider, paymentMethod: any | null) => {
     if (!profile?.walletAddress) {
       console.error("No wallet address available");
       return;
@@ -268,7 +249,6 @@ export const DepositScreen: React.FC<Props> = ({ navigation }) => {
         assetSymbol: "CUSD",
         amount: amount,
         destinationNetwork: "celo",
-        paymentMethod: paymentMethod ?? undefined,
       });
 
       setRampUrl(url);
@@ -377,12 +357,12 @@ export const DepositScreen: React.FC<Props> = ({ navigation }) => {
                   ) : availablePaymentMethods.length > 0 ? (
                     availablePaymentMethods.map((method) => (
                       <TouchableOpacity
-                        key={method}
+                        key={String(method)}
                         style={[styles.providerRow, { backgroundColor: colors.background }]}
                         onPress={() => handlePaymentMethodSelect(method)}
                       >
-                        <Text style={[styles.providerName, { color: colors.textPrimary }]}>{getPaymentMethodName(method)}</Text>
-                        <Text style={[styles.providerDesc, { color: colors.textSecondary }]}>{getPaymentMethodDescription(method)}</Text>
+                        <Text style={[styles.providerName, { color: colors.textPrimary }]}>{String(method)}</Text>
+                        <Text style={[styles.providerDesc, { color: colors.textSecondary }]}>{String(method)}</Text>
                       </TouchableOpacity>
                     ))
                   ) : (
@@ -601,8 +581,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E6E6E6",
     backgroundColor: "#FFFFFF",
   },
-  webViewTitle: {
-    ...typography.h2,
+    webViewTitle: {
+    ...typography.title,
     fontSize: 18,
     fontWeight: "600",
   },

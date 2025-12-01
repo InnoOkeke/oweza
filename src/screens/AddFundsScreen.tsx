@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { WebView } from "react-native-webview";
-import { useAuth } from "../providers/AppKitProvider";
+import { useAuth } from "../providers/Web3AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { spacing, typography } from "../utils/theme";
@@ -19,12 +19,7 @@ import type { ColorPalette } from "../utils/theme";
 import {
     buildRampUrlWithSession,
     getAvailableProviders,
-    getCoinbasePaymentMethods,
-    fetchCoinbasePaymentMethods,
-    getPaymentMethodName,
-    getPaymentMethodDescription,
     getProviderInfo,
-    type PaymentMethod,
     type RampProvider,
 } from "../services/ramp";
 import { useToast } from "../utils/toast";
@@ -38,9 +33,9 @@ export const AddFundsScreen: React.FC<AddFundsScreenProps> = ({ navigation }) =>
     const { showToast } = useToast();
 
     const [selectedProvider, setSelectedProvider] = useState<RampProvider | null>(null);
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<any | null>(null);
     const [availableProviders, setAvailableProviders] = useState<RampProvider[]>([]);
-    const [availablePaymentMethods, setAvailablePaymentMethods] = useState<PaymentMethod[]>([]);
+    const [availablePaymentMethods, setAvailablePaymentMethods] = useState<any[]>([]);
     const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
     const [showWebView, setShowWebView] = useState(false);
     const [webViewLoading, setWebViewLoading] = useState(true);
@@ -55,22 +50,8 @@ export const AddFundsScreen: React.FC<AddFundsScreenProps> = ({ navigation }) =>
 
     // Fetch payment methods when Coinbase is selected
     useEffect(() => {
-        if (selectedProvider === "coinbase" && profile?.walletAddress) {
-            setLoadingPaymentMethods(true);
-            fetchCoinbasePaymentMethods("onramp", profile.walletAddress)
-                .then(methods => {
-                    setAvailablePaymentMethods(methods);
-                })
-                .catch(error => {
-                    console.error("Error fetching payment methods:", error);
-                    setAvailablePaymentMethods(getCoinbasePaymentMethods("onramp"));
-                })
-                .finally(() => {
-                    setLoadingPaymentMethods(false);
-                });
-        } else {
-            setAvailablePaymentMethods([]);
-        }
+        // No external payment-method integrations currently available.
+        setAvailablePaymentMethods([]);
     }, [selectedProvider, profile?.walletAddress]);
 
     const handleProviderSelect = (provider: RampProvider) => {
@@ -84,14 +65,14 @@ export const AddFundsScreen: React.FC<AddFundsScreenProps> = ({ navigation }) =>
         }
     };
 
-    const handlePaymentMethodSelect = (method: PaymentMethod) => {
+    const handlePaymentMethodSelect = (method: any) => {
         setSelectedPaymentMethod(method);
         if (selectedProvider) {
             openRamp(selectedProvider, method);
         }
     };
 
-    const openRamp = async (provider: RampProvider, paymentMethod: PaymentMethod | null) => {
+    const openRamp = async (provider: RampProvider, paymentMethod: any | null) => {
         if (!profile?.walletAddress) {
             console.error("No wallet address available");
             return;
@@ -106,7 +87,6 @@ export const AddFundsScreen: React.FC<AddFundsScreenProps> = ({ navigation }) =>
                 walletAddress: profile.walletAddress,
                 assetSymbol: "CUSD",
                 destinationNetwork: "celo",
-                paymentMethod: paymentMethod ?? undefined,
             });
 
             setRampUrl(url);
@@ -158,8 +138,8 @@ export const AddFundsScreen: React.FC<AddFundsScreenProps> = ({ navigation }) =>
                     </>
                 )}
 
-                {/* Payment Method Selection (Coinbase only) */}
-                {selectedProvider === "coinbase" && (
+                {/* Payment Method Selection (if provider exposes methods) */}
+                {selectedProvider && (
                     <>
                         <Pressable style={styles.backButton} onPress={() => setSelectedProvider(null)}>
                             <Text style={styles.backButtonText}>← Back to providers</Text>
@@ -175,12 +155,12 @@ export const AddFundsScreen: React.FC<AddFundsScreenProps> = ({ navigation }) =>
                         ) : availablePaymentMethods.length > 0 ? (
                             availablePaymentMethods.map((method) => (
                                 <TouchableOpacity
-                                    key={method}
+                                    key={String(method)}
                                     style={styles.providerCard}
                                     onPress={() => handlePaymentMethodSelect(method)}
                                 >
-                                    <Text style={styles.providerName}>{getPaymentMethodName(method)}</Text>
-                                    <Text style={styles.providerDescription}>{getPaymentMethodDescription(method)}</Text>
+                                    <Text style={styles.providerName}>{String(method)}</Text>
+                                    <Text style={styles.providerDescription}>{String(method)}</Text>
                                 </TouchableOpacity>
                             ))
                         ) : (

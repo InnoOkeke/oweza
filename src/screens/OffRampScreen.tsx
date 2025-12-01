@@ -6,16 +6,13 @@ import { WebView } from "react-native-webview";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../providers/ThemeProvider";
-import { useAuth } from "../providers/AppKitProvider";
+import { useAuth } from "../providers/Web3AuthProvider";
 import type { ColorPalette } from "../utils/theme";
 import { spacing, typography } from "../utils/theme";
 import {
   buildRampUrl,
   getAvailableProviders,
-  getCoinbasePaymentMethods,
-  getPaymentMethodName,
   getProviderInfo,
-  type PaymentMethod,
   type RampProvider,
   type RampType,
 } from "../services/ramp";
@@ -29,7 +26,7 @@ export const OffRampScreen: React.FC<OffRampScreenProps> = () => {
 
   const [selectedProvider, setSelectedProvider] = useState<RampProvider | null>(null);
   const [selectedRampType, setSelectedRampType] = useState<RampType>("offramp");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<any | null>(null);
   const [showWebView, setShowWebView] = useState(false);
   const [webViewLoading, setWebViewLoading] = useState(true);
   const [availableProviders, setAvailableProviders] = useState<RampProvider[]>([]);
@@ -38,10 +35,7 @@ export const OffRampScreen: React.FC<OffRampScreenProps> = () => {
     getAvailableProviders(selectedRampType).then(setAvailableProviders);
   }, [selectedRampType]);
 
-  const availablePaymentMethods = useMemo(() => {
-    if (selectedProvider !== "coinbase") return [];
-    return getCoinbasePaymentMethods(selectedRampType);
-  }, [selectedProvider, selectedRampType]);
+  const availablePaymentMethods: any[] = [];
 
   const handleProviderSelect = (provider: RampProvider) => {
     setSelectedProvider(provider);
@@ -56,14 +50,14 @@ export const OffRampScreen: React.FC<OffRampScreenProps> = () => {
     }
   };
 
-  const handlePaymentMethodSelect = (method: PaymentMethod) => {
+  const handlePaymentMethodSelect = (method: any) => {
     setSelectedPaymentMethod(method);
     if (selectedProvider) {
       openRamp(selectedProvider, method);
     }
   };
 
-  const openRamp = (provider: RampProvider, paymentMethod: PaymentMethod | null) => {
+  const openRamp = (provider: RampProvider, paymentMethod: any | null) => {
     if (!profile?.walletAddress) {
       console.error("No wallet address available");
       return;
@@ -75,7 +69,6 @@ export const OffRampScreen: React.FC<OffRampScreenProps> = () => {
       walletAddress: profile.walletAddress,
       assetSymbol: "CUSD",
       destinationNetwork: "celo",
-      paymentMethod: paymentMethod ?? undefined,
     });
 
     console.log(`Opening ${provider} ${selectedRampType}:`, url);
@@ -148,7 +141,7 @@ export const OffRampScreen: React.FC<OffRampScreenProps> = () => {
         )}
 
         {/* Payment Method Selection (Coinbase only) */}
-        {selectedProvider === "coinbase" && availablePaymentMethods.length > 0 && !showWebView && (
+        {selectedProvider && availablePaymentMethods.length > 0 && !showWebView && (
           <>
             <Pressable style={styles.backButton} onPress={() => setSelectedProvider(null)}>
               <Text style={styles.backButtonText}>← Back to providers</Text>
@@ -157,11 +150,11 @@ export const OffRampScreen: React.FC<OffRampScreenProps> = () => {
             <Text style={styles.sectionTitle}>Select Payment Method</Text>
             {availablePaymentMethods.map((method) => (
               <Pressable
-                key={method}
+                key={String(method)}
                 style={styles.card}
                 onPress={() => handlePaymentMethodSelect(method)}
               >
-                <Text style={styles.title}>{getPaymentMethodName(method)}</Text>
+                <Text style={styles.title}>{String(method)}</Text>
               </Pressable>
             ))}
           </>
@@ -195,13 +188,12 @@ export const OffRampScreen: React.FC<OffRampScreenProps> = () => {
           <WebView
             source={{
               uri: buildRampUrl({
-                provider: selectedProvider!,
-                type: selectedRampType,
-                walletAddress: profile?.walletAddress ?? "",
-                assetSymbol: "cUSD",
-                destinationNetwork: "celo",
-                paymentMethod: selectedPaymentMethod ?? undefined,
-              })
+                  provider: selectedProvider!,
+                  type: selectedRampType,
+                  walletAddress: profile?.walletAddress ?? "",
+                  assetSymbol: "cUSD",
+                  destinationNetwork: "celo",
+                })
             }}
             style={styles.webView}
             onLoadStart={() => setWebViewLoading(true)}

@@ -5,7 +5,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RootStackParamList } from "../navigation/RootNavigator";
-import { useAuth } from "../providers/AppKitProvider";
+import { useAuth } from "../providers/Web3AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { TextField } from "../components/TextField";

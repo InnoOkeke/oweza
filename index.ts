@@ -57,8 +57,8 @@ if (typeof (global as any).document === 'undefined') {
     querySelectorAll: () => [],
     getElementsByTagName: () => [],
     getElementsByClassName: () => [],
-    addEventListener: () => {},
-    removeEventListener: () => {},
+    addEventListener: () => { },
+    removeEventListener: () => { },
     createTreeWalker: () => ({
       nextNode: () => null,
       currentNode: null,
@@ -75,10 +75,10 @@ if (typeof (global as any).document === 'undefined') {
 // Polyfill customElements for web components
 if (typeof (global as any).customElements === 'undefined') {
   (global as any).customElements = {
-    define: () => {},
+    define: () => { },
     get: () => undefined,
     whenDefined: () => Promise.resolve(),
-    upgrade: () => {},
+    upgrade: () => { },
   };
 }
 
@@ -87,15 +87,15 @@ if (typeof (global as any).CSSStyleSheet === 'undefined') {
   (global as any).CSSStyleSheet = class CSSStyleSheet {
     cssRules = [];
     insertRule() { return 0; }
-    deleteRule() {}
+    deleteRule() { }
     replace() { return Promise.resolve(this); }
-    replaceSync() {}
+    replaceSync() { }
   };
 }
 
 // Polyfill ShadowRoot for web components
 if (typeof (global as any).ShadowRoot === 'undefined') {
-  (global as any).ShadowRoot = class ShadowRoot {};
+  (global as any).ShadowRoot = class ShadowRoot { };
 }
 
 // Polyfill HTMLElement and other DOM classes
@@ -103,16 +103,16 @@ if (typeof (global as any).HTMLElement === 'undefined') {
   (global as any).HTMLElement = class HTMLElement {
     style = {};
     classList = {
-      add: () => {},
-      remove: () => {},
+      add: () => { },
+      remove: () => { },
       contains: () => false,
       toggle: () => false,
     };
-    setAttribute() {}
+    setAttribute() { }
     getAttribute() { return null; }
-    removeAttribute() {}
-    addEventListener() {}
-    removeEventListener() {}
+    removeAttribute() { }
+    addEventListener() { }
+    removeEventListener() { }
     appendChild() { return this; }
     removeChild() { return this; }
     querySelector() { return null; }
@@ -125,16 +125,16 @@ if (typeof (global as any).Element === 'undefined') {
   (global as any).Element = (global as any).HTMLElement;
 }
 if (typeof (global as any).Node === 'undefined') {
-  (global as any).Node = class Node {};
+  (global as any).Node = class Node { };
 }
 if (typeof (global as any).Text === 'undefined') {
-  (global as any).Text = class Text {};
+  (global as any).Text = class Text { };
 }
 if (typeof (global as any).Comment === 'undefined') {
-  (global as any).Comment = class Comment {};
+  (global as any).Comment = class Comment { };
 }
 if (typeof (global as any).DocumentFragment === 'undefined') {
-  (global as any).DocumentFragment = class DocumentFragment {};
+  (global as any).DocumentFragment = class DocumentFragment { };
 }
 
 // Also set on globalThis for maximum compatibility
@@ -244,33 +244,6 @@ if (typeof (global as any).CustomEvent === 'undefined') {
 
 // Debug logging
 console.log('🔧 Crypto polyfills initialized');
-console.log('   global.crypto:', !!(global as any).crypto);
-console.log('   global.crypto.randomBytes:', typeof (global as any).crypto?.randomBytes);
-console.log('   global.crypto.getRandomValues:', typeof (global as any).crypto?.getRandomValues);
-console.log('   global.crypto.subtle:', !!(global as any).crypto?.subtle);
-console.log('   global.crypto.subtle.digest:', typeof (global as any).crypto?.subtle?.digest);
-console.log('   browserCrypto:', !!(global as any).browserCrypto);
-console.log('   browserCrypto.randomBytes:', typeof (global as any).browserCrypto?.randomBytes);
-console.log('   browserCrypto.subtle:', !!(global as any).browserCrypto?.subtle);
-console.log('   browserCrypto.subtle.digest:', typeof (global as any).browserCrypto?.subtle?.digest);
-console.log('   window.crypto:', !!(global as any).window?.crypto);
-console.log('   window.crypto.subtle:', !!(global as any).window?.crypto?.subtle);
-console.log('   window.crypto.subtle.digest:', typeof (global as any).window?.crypto?.subtle?.digest);
-console.log('   self.crypto:', !!(global as any).self?.crypto);
-console.log('   self.crypto.subtle:', !!(global as any).self?.crypto?.subtle);
-console.log('   self.crypto.subtle.digest:', typeof (global as any).self?.crypto?.subtle?.digest);
-try {
-  const requiredCrypto = require('crypto');
-  console.log('   require("crypto").subtle:', !!requiredCrypto.subtle);
-  console.log('   require("crypto").subtle.digest:', typeof requiredCrypto.subtle?.digest);
-
-  // Ensure randomUUID is available
-  if (!(global as any).crypto.randomUUID) {
-    (global as any).crypto.randomUUID = requiredCrypto.randomUUID;
-  }
-} catch (e) {
-  console.log('   require("crypto") check failed:', e);
-}
 
 // ====================================
 // APP INITIALIZATION

@@ -6,7 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { WebView } from "react-native-webview";
 
 import { ToastModal } from "../components/ToastModal";
-import { useAuth } from "../providers/AppKitProvider";
+import { useAuth } from "../providers/Web3AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { listTransfers, TransferRecord } from "../services/transfers";
 import { getCusdBalance, getCusdTransactions, type BlockchainTransaction } from "../services/blockchain";
@@ -519,7 +519,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   </TouchableOpacity>
                   <View style={styles.profileDetails}>
                     <Text style={styles.greeting}>Welcome back,</Text>
-                    <Text style={styles.username}>{(profile?.username ?? profile?.displayName ?? profile?.email ?? 'user').split('@')[0]}</Text>
+                    <Text style={styles.username}>{(profile?.username ?? profile?.displayName ?? profile?.email ?? 'user').split('@')[0].split(' ')[0]}</Text>
                   </View>
                   <View style={styles.profileActions}>
                     <TouchableOpacity style={styles.locationIcon} onPress={handleLocationIconPress}>

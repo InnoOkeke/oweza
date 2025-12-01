@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Alert }
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useAuth } from "../providers/AppKitProvider";
+import { useAuth } from "../providers/Web3AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { spacing, typography } from "../utils/theme";
@@ -288,7 +288,6 @@ export const TransactionHistoryScreen: React.FC<Props> = ({ navigation }) => {
       case 'tip-received': icon = <Text style={{ fontSize: 20 }}>💸</Text>; break;
       case 'invoice-sent':
       case 'invoice-received':
-      case 'payment-request-received': icon = <Text style={{ fontSize: 20 }}>📄</Text>; break;
       case 'blockchain-received': icon = <Text style={{ fontSize: 20 }}>💰</Text>; break;
       case 'blockchain-sent': icon = <Text style={{ fontSize: 20 }}>↗️</Text>; break;
       case 'transfer-sent':

@@ -13,7 +13,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { RootStackParamList } from "../navigation/RootNavigator";
-import { useAuth } from "../providers/AppKitProvider";
+import { useAuth } from "../providers/Web3AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { invoiceService, CreateInvoiceInput } from "../services/InvoiceService";

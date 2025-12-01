@@ -4,7 +4,7 @@ import { DarkTheme, DefaultTheme, NavigationContainer, Theme } from "@react-navi
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { useAuth } from "../providers/AppKitProvider";
+import { useAuth } from "../providers/Web3AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { SignInScreen } from "../screens/Auth/SignInScreen";
 import { BiometricUnlockScreen } from "../screens/Auth/BiometricUnlockScreen";

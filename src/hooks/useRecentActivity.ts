@@ -5,7 +5,7 @@ import { getTips, Tip } from '../services/tipping';
 import { getCryptoGifts, CryptoGift } from '../services/gifts';
 import { getInvoices, Invoice } from '../services/invoices';
 import { getCusdTransactions, BlockchainTransaction } from '../services/blockchain';
-import { useAuth } from '../providers/AppKitProvider';
+import { useAuth } from '../providers/Web3AuthProvider';
 
 export type ActivityType =
     | 'transfer-sent'
@@ -84,7 +84,13 @@ export function useRecentActivity() {
     // 6. Blockchain Transactions
     const { data: blockchainTxs = [] } = useQuery({
         queryKey: ['blockchainTransactions', walletAddress],
-        queryFn: () => walletAddress ? getCusdTransactions(walletAddress as `0x${string}`) : [],
+        queryFn: async () => {
+          if (!walletAddress) return [];
+          console.log('🔍 Fetching CUSD transactions for wallet:', walletAddress);
+          const txs = await getCusdTransactions(walletAddress as `0x${string}`);
+          console.log('📊 CUSD transactions fetched:', txs.length, 'transactions');
+          return txs;
+        },
         enabled: !!walletAddress,
     });
 
@@ -99,7 +105,7 @@ export function useRecentActivity() {
         //         title: 'No smart account detected',
         //         subtitle: 'Please sign in with your AA wallet.',
         //         amount: 0,
-        //         currency: 'USDC',
+        //         currency: 'cUSD',
         //         timestamp: Date.now(),
         //         status: 'failed',
         //     };
@@ -190,7 +196,7 @@ export function useRecentActivity() {
             const recipient = t.recipientWallet || t.intent.recipientEmail;
             const isSent = sender && sender.toLowerCase() === walletAddress?.toLowerCase();
             const isReceived = (recipient && typeof recipient === 'string' && recipient.toLowerCase() === walletAddress?.toLowerCase()) || (t.intent.recipientEmail === email);
-            const amount = Number(t.intent.amountUsdc);
+            const amount = Number(t.intent.amountCusd);
             if (isSent) {
                 let type: ActivityType = 'transfer-sent';
                 let title = 'Payment Sent';

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -6,9 +6,11 @@ import {
   Text,
   View,
   ImageBackground,
+  TextInput,
+  Alert,
 } from "react-native";
 
-import { useAuth } from "../../providers/AppKitProvider";
+import { useAuth } from "../../providers/Web3AuthProvider";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { useTheme } from "../../providers/ThemeProvider";
 import type { ColorPalette } from "../../utils/theme";
@@ -20,11 +22,9 @@ export const SignInScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const { login, loading, error, isConnected, profile } = useAuth();
+  const [email, setEmail] = useState('');
 
-  const handleSignIn = async () => {
-    // Open Reown AppKit modal for email/Google/Apple authentication
-    await login();
-  };
+
 
   if (isConnected && profile) {
     return (
@@ -46,26 +46,58 @@ export const SignInScreen: React.FC = () => {
       >
         <View style={styles.bottomContent}>
           <View style={styles.buttonSection}>
-            <Text style={styles.welcomeText}>Welcome to Oweza</Text>
-            <Text style={styles.subtitleText}>
-              Sign in with email, Google, or Apple to create your secure wallet
-            </Text>
-            
+            {/* Email Login */}
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your email"
+              placeholderTextColor={colors.textSecondary}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
             <PrimaryButton
-              title="Sign In"
-              onPress={handleSignIn}
+              title="Continue with Email"
+              onPress={() => {
+                if (!email.trim()) {
+                  Alert.alert('Error', 'Please enter your email address');
+                  return;
+                }
+                login('email', email.trim());
+              }}
               loading={loading}
               disabled={loading}
               style={styles.socialButton}
+              textStyle={{ color: '#000' }}
             />
-            
-            <Text style={styles.helperText}>
-              Powered by Reown • Secure authentication
-            </Text>
+
+            {/* Google Login - Android only */}
+            {Platform.OS === 'android' && (
+              <PrimaryButton
+                title="Continue with Google"
+                onPress={() => login('google')}
+                loading={loading}
+                disabled={loading}
+                style={[styles.socialButton, styles.googleButton]}
+                textStyle={{ color: '#000' }}
+              />
+            )}
+
+            {/* Apple Login - iOS only */}
+            {Platform.OS === 'ios' && (
+              <PrimaryButton
+                title="Continue with Apple"
+                onPress={() => login('apple')}
+                loading={loading}
+                disabled={loading}
+                style={[styles.socialButton, styles.appleButton]}
+              />
+            )}
 
             {error && <Text style={styles.errorText}>{error}</Text>}
-            
-            {loading && <Text style={styles.loadingText}>Opening authentication...</Text>}
+
+            {loading && <Text style={styles.loadingText}>Authenticating...</Text>}
           </View>
 
           <Text style={styles.disclaimer}>
@@ -104,7 +136,17 @@ const createStyles = (colors: ColorPalette) =>
       width: "100%",
       backgroundColor: "#ffffff",
       borderRadius: 24,
+      marginBottom: 12,
     },
+    appleButton: {
+      backgroundColor: "#000000",
+    },
+    googleButton: {
+      backgroundColor: "#FFFFFF",
+      borderWidth: 1,
+      borderColor: "#E1E8ED",
+    },
+
     emailOutlineBtn: {
       width: "100%",
       paddingVertical: 16,

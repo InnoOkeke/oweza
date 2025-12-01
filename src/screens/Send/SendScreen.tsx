@@ -9,7 +9,7 @@ import * as LocalAuthentication from "expo-local-authentication";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { TextField } from "../../components/TextField";
 import { ToastModal } from "../../components/ToastModal";
-import { useAuth } from "../../providers/AppKitProvider";
+import { useAuth } from "../../providers/Web3AuthProvider";
 import { resolveEmailToWallet } from "../../services/addressResolution";
 import { sendCusdWithPaymaster, TransferIntent, TransferResult } from "../../services/transfers";
 import { getCusdBalance } from "../../services/blockchain";

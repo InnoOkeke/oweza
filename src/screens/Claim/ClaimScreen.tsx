@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useMutation } from "@tanstack/react-query";
 
 import { PrimaryButton } from "../../components/PrimaryButton";
-import { useAuth } from "../../providers/AppKitProvider";
+import { useAuth } from "../../providers/Web3AuthProvider";
 import { useTheme } from "../../providers/ThemeProvider";
 import { getTransferDetails, claimPendingTransfer, type PendingTransferDetails } from "../../services/api";
 import { PendingTransfer } from "../../types/database";

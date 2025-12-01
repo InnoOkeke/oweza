@@ -371,7 +371,10 @@ export async function createPendingTransfer(
     `/api/pending-transfers`,
     {
       method: "POST",
-      body: JSON.stringify(params),
+      body: JSON.stringify({
+        ...params,
+        amountCusd: parseFloat(params.amount), // Backend expects amountCusd as number
+      }),
     }
   );
 
