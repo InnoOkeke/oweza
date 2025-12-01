@@ -24,7 +24,7 @@ interface TransactionCardProps {
   }>;
 }
 
-const BASE_SEPOLIA_EXPLORER = 'https://sepolia.basescan.org';
+const CELO_SEPOLIA_EXPLORER = 'https://sepolia.celoscan.io';
 
 export const TransactionCard: React.FC<TransactionCardProps> = ({
   title,
@@ -44,7 +44,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
-  const txUrl = transactionHash ? `${(explorerUrl || BASE_SEPOLIA_EXPLORER)}/tx/${transactionHash}` : undefined;
+  const txUrl = transactionHash ? `${(explorerUrl || CELO_SEPOLIA_EXPLORER)}/tx/${transactionHash}` : undefined;
 
   const handlePressHash = async () => {
     if (!transactionHash) return;

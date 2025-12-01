@@ -97,7 +97,7 @@ export const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = (
 
     const handleOpenExplorer = () => {
         if (transaction.txHash) {
-            Linking.openURL(`https://sepolia.basescan.org/tx/${transaction.txHash}`);
+            Linking.openURL(`https://sepolia.celoscan.io/tx/${transaction.txHash}`);
         }
     };
 

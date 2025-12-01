@@ -5,8 +5,8 @@ export const CIRCLE_API_KEY = Constants?.expoConfig?.extra?.circleApiKey || 'TES
 export const CIRCLE_CONFIG = {
     apiKey: CIRCLE_API_KEY,
     environment: 'testnet' as const,
-    // Base Sepolia for testing
-    chain: 'BASE-SEPOLIA' as const,
+    // Celo Sepolia for testing
+    chain: 'CELO-SEPOLIA' as const,
 };
 
 // Circle API endpoints
