@@ -6,7 +6,7 @@
 // Celo Network Constants - Using Sepolia Testnet
 export const CELO_CHAIN_ID = 11142220; // Celo Sepolia Testnet
 export const CELO_RPC_URL = "https://forno.celo-sepolia.celo-testnet.org";
-export const CUSD_TOKEN_ADDRESS = "0xA99dC247d6b7B2E3ab48a1fEE101b83cD6aCd82a" as const; // cUSD on Celo Sepolia
+export const CUSD_TOKEN_ADDRESS = "0xde9e4c3ce781b4ba68120d6261cbad65ce0ab00b" as const; // cUSD on Celo Sepolia
 export const CUSD_DECIMALS = 18;
 
 // Paymaster API - Placeholder or Celo specific if applicable

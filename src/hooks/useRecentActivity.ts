@@ -85,11 +85,11 @@ export function useRecentActivity() {
     const { data: blockchainTxs = [] } = useQuery({
         queryKey: ['blockchainTransactions', walletAddress],
         queryFn: async () => {
-          if (!walletAddress) return [];
-          console.log('🔍 Fetching CUSD transactions for wallet:', walletAddress);
-          const txs = await getCusdTransactions(walletAddress as `0x${string}`);
-          console.log('📊 CUSD transactions fetched:', txs.length, 'transactions');
-          return txs;
+            if (!walletAddress) return [];
+            console.log('🔍 Fetching CUSD transactions for wallet:', walletAddress);
+            const txs = await getCusdTransactions(walletAddress as `0x${string}`);
+            console.log('📊 CUSD transactions fetched:', txs.length, 'transactions');
+            return txs;
         },
         enabled: !!walletAddress,
     });
@@ -188,27 +188,71 @@ export function useRecentActivity() {
 
         // Payment Requests removed - now using Transfers for sending cUSD via email
 
-        // Transfers: include sent and received
+        // Transfers: include sent, received, and pending
         (transfers || []).forEach((t: TransferRecord) => {
             const status = t.status;
-            if (status !== 'sent') return;
+            // Include both completed transfers and pending ones
+            if (status !== 'sent' && status !== 'pending_recipient_signup') return;
+
             const sender = t.senderWallet;
             const recipient = t.recipientWallet || t.intent.recipientEmail;
             const isSent = sender && sender.toLowerCase() === walletAddress?.toLowerCase();
             const isReceived = (recipient && typeof recipient === 'string' && recipient.toLowerCase() === walletAddress?.toLowerCase()) || (t.intent.recipientEmail === email);
             const amount = Number(t.intent.amountCusd);
+
+            // Map transfer status to activity status
+            const activityStatus = status === 'pending_recipient_signup' ? 'pending' : 'completed';
+
             if (isSent) {
                 let type: ActivityType = 'transfer-sent';
-                let title = 'Payment Sent';
+                let title = status === 'pending_recipient_signup' ? 'Pending Transfer' : 'Payment Sent';
                 const memo = t.intent.memo || '';
-                if (memo.toLowerCase().includes('international')) { type = 'blockchain-sent'; title = 'Sent Internationally'; }
-                else if (memo.toLowerCase().includes('add funds')) { type = 'blockchain-received'; title = 'Add Funds'; }
-                else if (memo.toLowerCase().includes('withdraw')) { type = 'blockchain-sent'; title = 'Withdraw'; }
-                else if (memo.toLowerCase().includes('email')) { type = 'transfer-sent'; title = 'Sent via Email'; }
-                allActivities.push({ id: t.id, type, title, subtitle: `To: ${t.intent.recipientEmail || recipient}`, amount: -amount, currency: 'cUSD', timestamp: new Date(t.createdAt).getTime(), status: 'completed', txHash: t.txHash, metadata: { to: t.intent.recipientEmail, from: t.intent.senderEmail, message: t.intent.memo } });
+
+                // Only apply memo-based titles for completed transfers
+                if (status === 'sent') {
+                    if (memo.toLowerCase().includes('international')) { type = 'blockchain-sent'; title = 'Sent Internationally'; }
+                    else if (memo.toLowerCase().includes('add funds')) { type = 'blockchain-received'; title = 'Add Funds'; }
+                    else if (memo.toLowerCase().includes('withdraw')) { type = 'blockchain-sent'; title = 'Withdraw'; }
+                    else if (memo.toLowerCase().includes('email')) { type = 'transfer-sent'; title = 'Sent via Email'; }
+                }
+
+                allActivities.push({
+                    id: t.id,
+                    type,
+                    title,
+                    subtitle: `To: ${t.intent.recipientEmail || recipient}`,
+                    amount: -amount,
+                    currency: 'cUSD',
+                    timestamp: new Date(t.createdAt).getTime(),
+                    status: activityStatus,
+                    txHash: t.txHash,
+                    metadata: {
+                        to: t.intent.recipientEmail,
+                        from: t.intent.senderEmail,
+                        message: t.intent.memo,
+                        pendingTransferId: t.pendingTransferId,
+                        redemptionCode: t.redemptionCode
+                    }
+                });
             }
-            if (isReceived) {
-                allActivities.push({ id: `${t.id}-received`, type: 'transfer-received', title: 'You Got Paid', subtitle: `From: ${t.intent.senderEmail || sender}`, amount: amount, currency: 'cUSD', timestamp: new Date(t.createdAt).getTime(), status: 'completed', txHash: t.txHash, metadata: { from: t.intent.senderEmail, to: t.intent.recipientEmail, message: t.intent.memo } });
+            if (isReceived && status === 'sent') {
+                // Only show received transfers that are completed (not pending)
+                allActivities.push({
+                    id: `${t.id}-received`,
+                    type: 'transfer-received',
+                    title: 'You Got Paid',
+                    subtitle: `From: ${t.intent.senderEmail || sender}`,
+                    amount: amount,
+                    currency: 'cUSD',
+                    timestamp: new Date(t.createdAt).getTime(),
+                    status: 'completed',
+                    txHash: t.txHash,
+                    metadata: {
+                        from: t.intent.senderEmail,
+                        to: t.intent.recipientEmail,
+                        message: t.intent.memo
+                    }
+                });
             }
         });
 
@@ -265,32 +309,6 @@ export function useRecentActivity() {
             }
         });
 
-        // Mock Add Funds and Withdraw (for demo purposes)
-        const mockAddFunds: ActivityItem = {
-            id: 'mock-add-funds',
-            type: 'blockchain-received',
-            title: 'Add Funds',
-            subtitle: 'From Bank Account',
-            amount: 50,
-            currency: 'cUSD',
-            timestamp: Date.now() - 1000 * 60 * 60 * 24 * 2, // 2 days ago
-            status: 'completed',
-            metadata: { method: 'ACH' }
-        };
-
-        const mockWithdraw: ActivityItem = {
-            id: 'mock-withdraw',
-            type: 'blockchain-sent',
-            title: 'Withdraw',
-            subtitle: 'To Bank Account',
-            amount: -20,
-            currency: 'cUSD',
-            timestamp: Date.now() - 1000 * 60 * 60 * 24 * 5, // 5 days ago
-            status: 'completed',
-            metadata: { method: 'ACH' }
-        };
-
-        allActivities.push(mockAddFunds, mockWithdraw);
 
         const sorted = allActivities.sort((a, b) => b.timestamp - a.timestamp);
         if (sorted.length === 0) {

@@ -15,6 +15,7 @@ export type EscrowCreateRequest = {
   tokenAddress: string;
   chain: ChainType;
   expiry?: number;
+  fundingWallet?: `0x${string}`;
 };
 
 export type EscrowCreateResult = {
@@ -22,6 +23,9 @@ export type EscrowCreateResult = {
   recipientHash: string;
   expiry: number;
   txHash: string;
+  callData?: string;
+  to?: string;
+  value?: bigint;
 };
 
 export type EscrowClaimResult = {
@@ -73,6 +77,7 @@ class EscrowService {
       decimals: request.decimals,
       tokenAddress: request.tokenAddress as `0x${string}`,
       expiry: request.expiry,
+      fundingWallet: request.fundingWallet,
     });
 
     return {
@@ -80,6 +85,9 @@ class EscrowService {
       recipientHash: receipt.recipientHash,
       expiry: receipt.expiry,
       txHash: receipt.userOpHash,
+      callData: receipt.callData,
+      to: receipt.to,
+      value: receipt.value,
     };
   }
 
@@ -239,12 +247,13 @@ class EscrowService {
   }
 
   private async requireDriver() {
-    if (isReactNative) {
-      return null;
-    }
+    // Enabled for RN now that driver is universal
+    // if (isReactNative) {
+    //   return null;
+    // }
 
     if (!this.driverPromise) {
-      this.driverPromise = import("./server/SharedEscrowDriver.js");
+      this.driverPromise = import("./server/SharedEscrowDriver");
     }
 
     return this.driverPromise;

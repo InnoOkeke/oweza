@@ -365,6 +365,7 @@ export const TransactionHistoryScreen: React.FC<Props> = ({ navigation }) => {
           transaction={selectedTransaction}
           userCurrency={userCurrency}
           fxRate={fxRate}
+          onCancel={handleCancelTransfer}
         />
       )}
     </View>

@@ -687,6 +687,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 transaction={selectedTransaction}
                 userCurrency={userCurrency}
                 fxRate={fxRate}
+                onCancel={(transaction) => {
+                  setIsTransactionModalVisible(false);
+                  navigation.navigate('TransactionHistory');
+                }}
               />
 
             </>

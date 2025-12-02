@@ -53,6 +53,13 @@ contract SharedEscrow is AccessControl, Pausable, ReentrancyGuard {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
+    modifier onlyOperatorOrFundingWallet(CreateParams calldata params) {
+        if (!hasRole(OPERATOR_ROLE, msg.sender) && msg.sender != params.fundingWallet) {
+            revert("Not authorized");
+        }
+        _;
+    }
+
     mapping(bytes32 => Transfer) private transfers;
     mapping(address => uint256) public lockedBalance;
 
@@ -77,7 +84,7 @@ contract SharedEscrow is AccessControl, Pausable, ReentrancyGuard {
         _grantRole(PAUSER_ROLE, admin);
     }
 
-    function createTransfer(CreateParams calldata params, PermitInput calldata permit) external whenNotPaused onlyRole(OPERATOR_ROLE) nonReentrant {
+    function createTransfer(CreateParams calldata params, PermitInput calldata permit) external whenNotPaused onlyOperatorOrFundingWallet(params) nonReentrant {
         _validateCreateParams(params);
         if (permit.enabled) {
             IERC20Permit(params.token).permit(params.fundingWallet, address(this), permit.value, permit.deadline, permit.v, permit.r, permit.s);

@@ -13,6 +13,7 @@ interface TransactionDetailsModalProps {
     transaction: ActivityItem | null;
     userCurrency?: string;
     fxRate?: number;
+    onCancel?: (transaction: ActivityItem) => void;
 }
 
 export const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({
@@ -21,6 +22,7 @@ export const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = (
     transaction,
     userCurrency = 'USD',
     fxRate = 1,
+    onCancel,
 }) => {
     // All hooks must be called before any conditional returns
     const { colors } = useTheme();
@@ -153,6 +155,19 @@ export const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = (
                             <Text style={styles.receiptButtonText}>Txn Hash</Text>
                         </TouchableOpacity>
                     )}
+
+                    {/* Show cancel button for pending sent transfers */}
+                    {transaction.status === 'pending' && !isReceived && onCancel && (
+                        <TouchableOpacity
+                            style={styles.cancelButton}
+                            onPress={() => {
+                                onCancel(transaction);
+                                onClose();
+                            }}
+                        >
+                            <Text style={styles.cancelButtonText}>Cancel Transfer & Get Refund</Text>
+                        </TouchableOpacity>
+                    )}
                 </Pressable>
             </Pressable>
         </Modal>
@@ -262,6 +277,21 @@ const createStyles = (colors: any) => StyleSheet.create({
     receiptButtonText: {
         ...typography.body,
         color: '#FFFFFF',
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    cancelButton: {
+        backgroundColor: 'rgba(239, 68, 68, 0.15)', // Red with transparency
+        borderWidth: 1,
+        borderColor: '#EF4444',
+        borderRadius: 12,
+        paddingVertical: spacing.md,
+        alignItems: 'center',
+        marginTop: spacing.md,
+    },
+    cancelButtonText: {
+        ...typography.body,
+        color: '#EF4444',
         fontSize: 15,
         fontWeight: '600',
     },

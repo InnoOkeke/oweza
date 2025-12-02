@@ -79,7 +79,7 @@
     ],
     "extra": {
       "appUrl": "https://oweza.vercel.app",
-      "owezaApiBaseUrl": "http://10.0.2.2:3000",
+      "owezaApiBaseUrl": "https://oweza.onrender.com",
       "CELO_EXPLORER_URL": "https://celo-sepolia.blockscout.com"
     }
   }

@@ -1,6 +1,7 @@
 import { resolveEmailToWallet } from "./addressResolution";
 import { emailNotificationService } from "./EmailNotificationService";
-import { getCusdBalance, encodeCusdTransfer } from "./blockchain";
+import { escrowService } from "./EscrowService";
+import { getCusdBalance, encodeCusdTransfer, getCusdAllowance, encodeCusdApprove } from "./blockchain";
 import { CUSD_TOKEN_ADDRESS, CUSD_DECIMALS } from "../config/celo";
 import { createPendingTransfer } from "./api";
 import type { TransferIntent, TransferRecord, TransferResult } from "../types/transfers";
@@ -145,8 +146,9 @@ export async function sendCusdWithPaymaster(
   const balance = await getCusdBalance(walletAddress);
   console.log("💵 Balance:", balance.toFixed(2), "cUSD");
 
-  if (balance < amountCusd) {
-    throw new Error(`Insufficient cUSD balance. You have ${balance.toFixed(2)} cUSD but need ${amountCusd.toFixed(2)} cUSD`);
+  const GAS_BUFFER = 0.05; // 0.05 cUSD buffer for gas fees
+  if (balance < amountCusd + GAS_BUFFER) {
+    throw new Error(`Insufficient balance. You need ${(amountCusd + GAS_BUFFER).toFixed(2)} cUSD (incl. gas). You have ${balance.toFixed(2)} cUSD.`);
   }
 
   const senderAddress = assertHexAddress(walletAddress, "Sender wallet");
@@ -164,7 +166,7 @@ export async function sendCusdWithPaymaster(
 
     if (!contact.isRegistered || !contact.walletAddress) {
       console.log("📧 Creating pending transfer (unregistered user)");
-      const pendingRecord = await enqueuePendingTransfer(senderAddress, intent);
+      const pendingRecord = await enqueuePendingTransfer(senderAddress, intent, sendUserOperationFn);
       return pendingRecord;
     }
     recipientAddress = assertHexAddress(contact.walletAddress, "Recipient wallet");
@@ -205,9 +207,16 @@ export async function sendCusdWithPaymaster(
   const recipientName = contact.displayName ?? intent.recipientEmail;
   const amountDisplay = intent.amountCusd.toString();
 
+  console.log("📧 Preparing to send email notifications:");
+  console.log("   - Sender Email:", intent.senderEmail || "(not provided)");
+  console.log("   - Sender Name:", senderName);
+  console.log("   - Recipient Email:", intent.recipientEmail);
+  console.log("   - Skip Notification:", intent.skipNotification ? "YES" : "NO");
+
   const notificationPromises: Promise<boolean>[] = [];
 
   if (!intent.skipNotification) {
+    console.log("📨 Queuing recipient notification email to:", intent.recipientEmail);
     notificationPromises.push(
       emailNotificationService.sendTransferNotification(
         intent.recipientEmail,
@@ -218,9 +227,12 @@ export async function sendCusdWithPaymaster(
         CHAIN_NAME
       )
     );
+  } else {
+    console.log("⏭️ Skipping recipient notification (skipNotification = true)");
   }
 
   if (intent.senderEmail) {
+    console.log("📨 Queuing sender confirmation email to:", intent.senderEmail);
     notificationPromises.push(
       emailNotificationService.sendTransferConfirmation(
         intent.senderEmail,
@@ -231,31 +243,94 @@ export async function sendCusdWithPaymaster(
         "sent"
       )
     );
+  } else {
+    console.log("⏭️ Skipping sender confirmation (no sender email provided)");
   }
+
+  console.log(`📬 Sending ${notificationPromises.length} email(s)...`);
 
   Promise.allSettled(notificationPromises)
     .then((results) => {
       results.forEach((result, index) => {
+        const emailType = index === 0 ? "Recipient notification" : "Sender confirmation";
         if (result.status === "fulfilled") {
-          console.log(index === 0 ? "📨 Recipient notified" : "📨 Sender confirmation sent");
+          const success = result.value;
+          if (success) {
+            console.log(`✅ ${emailType} sent successfully`);
+          } else {
+            console.warn(`⚠️ ${emailType} failed (returned false)`);
+          }
         } else {
-          console.warn("⚠️ Email notification failed:", result.reason);
+          console.error(`❌ ${emailType} failed with error:`, result.reason);
         }
       });
     })
-    .catch((error) => console.warn("⚠️ Email notification promise rejected:", error));
+    .catch((error) => console.error("❌ Email notification promise rejected:", error));
 
   return record;
 }
 
 async function enqueuePendingTransfer(
   senderAddress: `0x${string}`,
-  intent: TransferIntent
+  intent: TransferIntent,
+  sendUserOperationFn: (calls: any[]) => Promise<{ userOperationHash: string }>
 ): Promise<TransferResult> {
   if (!intent.senderUserId) {
     throw new Error("Sender identity required for pending transfers");
   }
 
+  console.log("🔒 Generating escrow transaction data...");
+  const receipt = await escrowService.createOnchainTransfer({
+    recipientEmail: intent.recipientEmail,
+    amount: intent.amountCusd.toString(),
+    decimals: CUSD_DECIMALS,
+    tokenAddress: CUSD_TOKEN_ADDRESS,
+    chain: "celo",
+    fundingWallet: senderAddress,
+  });
+
+  if (!receipt.callData || !receipt.to) {
+    throw new Error("Failed to generate escrow transaction data");
+  }
+
+  // Check allowance
+  const escrowAddress = receipt.to as `0x${string}`;
+  const allowance = await getCusdAllowance(senderAddress, escrowAddress);
+
+  console.log("� Debug Escrow Transaction:");
+  console.log("   - Escrow Contract:", escrowAddress);
+  console.log("   - Token Address:", CUSD_TOKEN_ADDRESS);
+  console.log("   - Sender:", senderAddress);
+  console.log("   - Amount:", intent.amountCusd);
+  console.log("   - Allowance:", allowance);
+  console.log("   - Call Data:", receipt.callData);
+
+  const calls = [];
+
+  if (allowance < intent.amountCusd) {
+    console.log("📝 Adding approve call for Escrow contract (Large Approval)");
+    // Approve a large amount (1M cUSD) to avoid repeated approvals and gas costs
+    const approveData = encodeCusdApprove(escrowAddress, 1000000);
+    calls.push({
+      to: CUSD_TOKEN_ADDRESS,
+      value: 0n,
+      data: approveData,
+    });
+  }
+
+  calls.push({
+    to: receipt.to,
+    value: receipt.value || 0n,
+    data: receipt.callData,
+  });
+
+  console.log(`⚡ Executing escrow creation on-chain (${calls.length} calls)...`);
+  const result = await sendUserOperationFn(calls);
+
+  const txHash = result.userOperationHash as `0x${string}`;
+  console.log("✅ Escrow transaction sent! Hash:", txHash);
+
+  // Use the REAL transaction hash from the user operation, not the placeholder from escrowService
   const transfer = await createPendingTransfer({
     recipientEmail: intent.recipientEmail,
     senderUserId: intent.senderUserId,
@@ -265,6 +340,8 @@ async function enqueuePendingTransfer(
     chain: "celo",
     decimals: CUSD_DECIMALS,
     message: intent.memo,
+    escrowTransferId: receipt.transferId,
+    escrowTxHash: txHash, // This is the REAL hash from the blockchain transaction
   });
   const record: TransferRecord = {
     id: `pending_${Date.now()}`,

@@ -41,6 +41,8 @@ export const CreatePendingTransferSchema = z.object({
   chain: z.enum(["celo"]),
   decimals: z.number(),
   message: z.string().optional(),
+  escrowTransferId: z.string().optional(),
+  escrowTxHash: z.string().optional(),
 });
 
 export type CreatePendingTransferRequest = z.infer<typeof CreatePendingTransferSchema>;
@@ -164,17 +166,37 @@ class PendingTransferService {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + this.EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
-    // Create pooled escrow transfer
-    const escrowStart = Date.now();
-    const onchainReceipt = await escrowService.createOnchainTransfer({
-      recipientEmail: validated.recipientEmail,
-      amount: validated.amount,
-      decimals: validated.decimals,
-      tokenAddress: validated.tokenAddress,
-      chain: validated.chain,
-      expiry: Math.floor(expiresAt.getTime() / 1000),
-    });
-    console.log(`⏱️ Escrow transfer creation: ${Date.now() - escrowStart}ms`);
+    let escrowTransferId: string;
+    let escrowTxHash: string;
+    let recipientHash: string;
+
+    // Check if escrow data is already provided by the client (mobile app executed the tx)
+    if (validated.escrowTransferId && validated.escrowTxHash) {
+      console.log("📱 Using escrow data from client (transaction already executed)");
+      escrowTransferId = validated.escrowTransferId;
+      escrowTxHash = validated.escrowTxHash;
+      // Compute recipient hash locally
+      const escrowDriver = await import("./EscrowService").then(m => m.escrowService);
+      // We need to compute the recipient hash the same way the driver does
+      // For now, we'll leave it empty and let it be filled later if needed
+      recipientHash = ""; // Will be synced from blockchain if needed
+    } else {
+      // Create pooled escrow transfer on backend
+      console.log("🔒 Creating escrow transfer on backend");
+      const escrowStart = Date.now();
+      const onchainReceipt = await escrowService.createOnchainTransfer({
+        recipientEmail: validated.recipientEmail,
+        amount: validated.amount,
+        decimals: validated.decimals,
+        tokenAddress: validated.tokenAddress,
+        chain: validated.chain,
+        expiry: Math.floor(expiresAt.getTime() / 1000),
+      });
+      console.log(`⏱️ Escrow transfer creation: ${Date.now() - escrowStart}ms`);
+      escrowTransferId = onchainReceipt.transferId;
+      escrowTxHash = onchainReceipt.txHash;
+      recipientHash = onchainReceipt.recipientHash;
+    }
 
     const transfer: PendingTransfer = {
       transferId,
@@ -188,11 +210,11 @@ class PendingTransferService {
       chain: validated.chain,
       decimals: validated.decimals,
       status: "pending",
-      escrowTransferId: onchainReceipt.transferId,
-      escrowTxHash: onchainReceipt.txHash,
+      escrowTransferId,
+      escrowTxHash,
       escrowStatus: "pending",
-      recipientHash: onchainReceipt.recipientHash,
-      transactionHash: onchainReceipt.txHash,
+      recipientHash,
+      transactionHash: escrowTxHash,
       message: validated.message,
       createdAt: now.toISOString(),
       expiresAt: expiresAt.toISOString(),

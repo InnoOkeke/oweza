@@ -27,6 +27,26 @@ const ERC20_ABI = [
     type: "function",
   },
   {
+    constant: false,
+    inputs: [
+      { name: "_spender", type: "address" },
+      { name: "_value", type: "uint256" },
+    ],
+    name: "approve",
+    outputs: [{ name: "", type: "bool" }],
+    type: "function",
+  },
+  {
+    constant: true,
+    inputs: [
+      { name: "_owner", type: "address" },
+      { name: "_spender", type: "address" },
+    ],
+    name: "allowance",
+    outputs: [{ name: "remaining", type: "uint256" }],
+    type: "function",
+  },
+  {
     anonymous: false,
     inputs: [
       { indexed: true, name: "from", type: "address" },
@@ -55,6 +75,9 @@ export type BlockchainTransaction = {
 const publicClient = createPublicClient({
   chain: celoSepolia,
   transport: http(CELO_RPC_URL),
+  batch: {
+    multicall: true,
+  },
 });
 
 /**
@@ -81,6 +104,25 @@ export async function getCusdBalance(address: `0x${string}`): Promise<number> {
 }
 
 /**
+ * Get cUSD allowance for a spender
+ */
+export async function getCusdAllowance(owner: `0x${string}`, spender: `0x${string}`): Promise<number> {
+  try {
+    const allowance = await publicClient.readContract({
+      address: CUSD_TOKEN_ADDRESS,
+      abi: ERC20_ABI,
+      functionName: "allowance",
+      args: [owner, spender],
+    });
+
+    return Number(allowance) / Math.pow(10, CUSD_DECIMALS);
+  } catch (error) {
+    console.error("Failed to fetch cUSD allowance:", error);
+    return 0;
+  }
+}
+
+/**
  * Encode a cUSD transfer call for use in a user operation
  * @param to Recipient address
  * @param amountCusd Amount in cUSD (e.g., 10.50)
@@ -97,6 +139,22 @@ export function encodeCusdTransfer(
     abi: ERC20_ABI,
     functionName: "transfer",
     args: [to, amountInSmallestUnit],
+  });
+}
+
+/**
+ * Encode a cUSD approve call
+ */
+export function encodeCusdApprove(
+  spender: `0x${string}`,
+  amountCusd: number
+): `0x${string}` {
+  const amountInSmallestUnit = parseUnits(amountCusd.toString(), CUSD_DECIMALS);
+
+  return encodeFunctionData({
+    abi: ERC20_ABI,
+    functionName: "approve",
+    args: [spender, amountInSmallestUnit],
   });
 }
 
@@ -125,17 +183,18 @@ export async function getCusdTransactions(
   limit: number = 50
 ): Promise<BlockchainTransaction[]> {
   try {
-    console.log('🔍 [blockchain] Fetching cUSD transactions for:', address);
     const currentBlock = await publicClient.getBlockNumber();
 
-    // Fetch last ~10000 blocks (approximately 1 day on Celo)
+    // Fetch last ~500000 blocks (approximately 30 days on Celo)
     // Celo block time is ~5s. 1 day = 86400/5 = 17280 blocks.
-    const fromBlock = currentBlock - 17280n;
+    // 30 days = 17280 * 30 = 518,400 blocks
+    const blocksToFetch = 500000n;
+    const fromBlock = currentBlock > blocksToFetch ? currentBlock - blocksToFetch : 0n;
 
     // Get sent transactions (from address)
     const sentLogs = await publicClient.getLogs({
       address: CUSD_TOKEN_ADDRESS,
-      event: ERC20_ABI[2], // Transfer event
+      event: ERC20_ABI[4], // Transfer event is now at index 4
       args: {
         from: address,
       },
@@ -146,13 +205,14 @@ export async function getCusdTransactions(
     // Get received transactions (to address)
     const receivedLogs = await publicClient.getLogs({
       address: CUSD_TOKEN_ADDRESS,
-      event: ERC20_ABI[2], // Transfer event
+      event: ERC20_ABI[4], // Transfer event is now at index 4
       args: {
         to: address,
       },
       fromBlock,
       toBlock: currentBlock,
     });
+
 
     // Process sent transactions
     const sentTxs: BlockchainTransaction[] = await Promise.all(
@@ -186,14 +246,32 @@ export async function getCusdTransactions(
       })
     );
 
-    // Combine and sort by timestamp (newest first)
-    const allTxs = [...sentTxs, ...receivedTxs]
+    // Combine and deduplicate by hash
+    // Priority: sentTxs take precedence over receivedTxs for the same hash
+    const allTxsMap = new Map<string, BlockchainTransaction>();
+
+    // Add received transactions first
+    receivedTxs.forEach(tx => {
+      allTxsMap.set(tx.hash, tx);
+    });
+
+    // Add sent transactions (will overwrite received if same hash)
+    sentTxs.forEach(tx => {
+      allTxsMap.set(tx.hash, tx);
+    });
+
+    const allTxs = Array.from(allTxsMap.values())
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, limit);
 
+
+    // Clean summary log like transfers
+    const shortAddr = address.substring(0, 6);
+    console.log(`📋 Synced ${allTxs.length} blockchain transactions (${sentTxs.length} sent, ${receivedTxs.length} received) for ${shortAddr}`);
+
     return allTxs;
   } catch (error) {
-    console.error("Failed to fetch cUSD transactions:", error);
+    console.error("❌ Failed to fetch cUSD transactions:", error);
     return [];
   }
 }

@@ -21,9 +21,12 @@ export default ({ config }) => ({
     transakSecretKey: process.env.TRANSAK_SECRET_KEY || "",
     paycrestApiKey: process.env.PAYCREST_API_KEY || "",
     paycrestSecretKey: process.env.PAYCREST_SECRET_KEY || "",
-    
+
     // Escrow Configuration
-    escrowMockMode: (process.env.ESCROW_USE_MOCK || "true") !== "false",
+    escrowMockMode: false,
+    escrowContractAddress: process.env.ESCROW_CONTRACT_ADDRESS || "",
+    escrowTreasuryWallet: process.env.ESCROW_TREASURY_WALLET || "",
+    escrowTokenAddress: process.env.ESCROW_TOKEN_ADDRESS || "",
     pendingTransferExpiryDays: parseInt(process.env.PENDING_TRANSFER_EXPIRY_DAYS || "7", 10),
 
     // Rate Limits

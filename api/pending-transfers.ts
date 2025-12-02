@@ -42,15 +42,24 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const parsed = CreatePendingTransferSchema.safeParse(req.body);
     if (!parsed.success) {
+      console.error("❌ Pending transfer validation failed:", parsed.error.message);
       return badRequest(res, parsed.error.message);
     }
+    console.log("✅ Creating pending transfer:", {
+      recipientEmail: parsed.data.recipientEmail,
+      amount: parsed.data.amount,
+      hasEscrowId: !!parsed.data.escrowTransferId,
+      hasEscrowTxHash: !!parsed.data.escrowTxHash,
+    });
     // Start processing asynchronously but don't wait for completion
     const transferPromise = pendingTransferService.createPendingTransfer(parsed.data);
     // Return immediately with pending status
     res.status(202).json({ success: true, status: "processing", message: "Transfer is being processed" });
     // Continue processing in background (fire-and-forget)
-    transferPromise.catch(error => {
-      console.error("Error processing pending transfer:", error);
+    transferPromise.then(() => {
+      console.log("✅ Pending transfer created successfully");
+    }).catch(error => {
+      console.error("❌ Error processing pending transfer:", error);
     });
     return;
   } catch (err) {

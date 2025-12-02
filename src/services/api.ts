@@ -225,12 +225,24 @@ export async function getPendingTransfers(
     transfers: PendingTransferSummary[];
   }
 
-  const response = await apiRequest<PendingTransfersResponse>(
-    `/api/pending-transfers?recipientEmail=${encodeURIComponent(recipientEmail)}`,
-    { method: "GET" }
-  );
+  try {
+    const response = await apiRequest<PendingTransfersResponse>(
+      `/api/pending-transfers?recipientEmail=${encodeURIComponent(recipientEmail)}`,
+      { method: "GET" }
+    );
 
-  return response.transfers;
+    return response.transfers;
+  } catch (error) {
+    // If no pending transfers found, return empty array instead of throwing
+    if (error instanceof Error &&
+      (error.message.includes("not found") ||
+        error.message.includes("No pending transfers"))) {
+      console.log(`ℹ️ No pending transfers found for ${recipientEmail}`);
+      return [];
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /**
@@ -243,12 +255,24 @@ export async function getSentPendingTransfers(
     transfers: PendingTransferSummary[];
   }
 
-  const response = await apiRequest<PendingTransfersResponse>(
-    `/api/pending-transfers?senderUserId=${encodeURIComponent(senderUserId)}`,
-    { method: "GET" }
-  );
+  try {
+    const response = await apiRequest<PendingTransfersResponse>(
+      `/api/pending-transfers?senderUserId=${encodeURIComponent(senderUserId)}`,
+      { method: "GET" }
+    );
 
-  return response.transfers;
+    return response.transfers;
+  } catch (error) {
+    // If no pending transfers found, return empty array instead of throwing
+    if (error instanceof Error &&
+      (error.message.includes("not found") ||
+        error.message.includes("No pending transfers"))) {
+      console.log(`ℹ️ No sent pending transfers found for user ${senderUserId}`);
+      return [];
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /**
@@ -356,6 +380,8 @@ export interface CreatePendingTransferParams {
   chain: string;
   decimals: number;
   message?: string;
+  escrowTransferId?: string;
+  escrowTxHash?: string;
 }
 
 export async function createPendingTransfer(

@@ -8,6 +8,8 @@ import {
   ImageBackground,
   TextInput,
   Alert,
+  Modal,
+  TouchableOpacity,
 } from "react-native";
 
 import { useAuth } from "../../providers/Web3AuthProvider";
@@ -23,55 +25,41 @@ export const SignInScreen: React.FC = () => {
 
   const { login, loading, error, isConnected, profile } = useAuth();
   const [email, setEmail] = useState('');
-
-
+  const [isEmailModalVisible, setIsEmailModalVisible] = useState(false);
 
   if (isConnected && profile) {
     return (
-      <ImageBackground source={BgImage} style={styles.bgImage} resizeMode="cover">
+      <View style={styles.mainContainer}>
+        <ImageBackground source={BgImage} style={styles.bgImageAbsolute} resizeMode="cover" />
         <View style={styles.containerCenter}>
           <Text style={styles.title}>✅ Signed In</Text>
           <Text style={styles.titleBold}>Email: {profile.email}</Text>
           <Text style={styles.titleBold}>Wallet: {profile.walletAddress.slice(0, 6)}...{profile.walletAddress.slice(-4)}</Text>
         </View>
-      </ImageBackground>
+      </View>
     );
   }
 
+  const handleEmailLogin = () => {
+    if (!email.trim()) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+    login('email', email.trim());
+    // We don't close the modal immediately so the user sees the loading state
+  };
+
   return (
-    <ImageBackground source={BgImage} style={styles.bgImage} resizeMode="cover">
+    <View style={styles.mainContainer}>
+      {/* Absolute Background Image */}
+      <ImageBackground source={BgImage} style={styles.bgImageAbsolute} resizeMode="cover" />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}
+        style={styles.contentContainer}
       >
         <View style={styles.bottomContent}>
           <View style={styles.buttonSection}>
-            {/* Email Login */}
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              placeholderTextColor={colors.textSecondary}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <PrimaryButton
-              title="Continue with Email"
-              onPress={() => {
-                if (!email.trim()) {
-                  Alert.alert('Error', 'Please enter your email address');
-                  return;
-                }
-                login('email', email.trim());
-              }}
-              loading={loading}
-              disabled={loading}
-              style={styles.socialButton}
-              textStyle={{ color: '#000' }}
-            />
-
             {/* Google Login - Android only */}
             {Platform.OS === 'android' && (
               <PrimaryButton
@@ -95,6 +83,16 @@ export const SignInScreen: React.FC = () => {
               />
             )}
 
+            {/* Email Login Button - Opens Modal */}
+            <PrimaryButton
+              title="Continue with Email"
+              onPress={() => setIsEmailModalVisible(true)}
+              loading={loading}
+              disabled={loading}
+              style={[styles.socialButton, styles.emailButton]}
+              textStyle={{ color: '#FFFFFF' }}
+            />
+
             {error && <Text style={styles.errorText}>{error}</Text>}
 
             {loading && <Text style={styles.loadingText}>Authenticating...</Text>}
@@ -105,22 +103,72 @@ export const SignInScreen: React.FC = () => {
             <Text style={styles.link}>privacy policy</Text>. Built on Celo blockchain.
           </Text>
         </View>
-
       </KeyboardAvoidingView>
-    </ImageBackground>
+
+      {/* Email Input Modal - Outside KeyboardAvoidingView to prevent flickering */}
+      <Modal
+        visible={isEmailModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsEmailModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setIsEmailModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.modalTitle}>Sign in with Email</Text>
+            <Text style={styles.modalSubtitle}>
+              Enter your email address to receive a login link. No password required.
+            </Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your email"
+              placeholderTextColor={colors.textSecondary}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoFocus={true}
+            />
+
+            <PrimaryButton
+              title="Continue"
+              onPress={handleEmailLogin}
+              loading={loading}
+              disabled={loading}
+              style={{ width: '100%' }}
+            />
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 };
 
 const createStyles = (colors: ColorPalette) =>
   StyleSheet.create({
-    bgImage: {
+    mainContainer: {
       flex: 1,
-      width: "100%",
-      height: "100%",
+      backgroundColor: colors.background,
     },
-    container: {
+    bgImageAbsolute: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+    },
+    contentContainer: {
       flex: 1,
     },
+    // Removed old bgImage and container styles as they are replaced
     bottomContent: {
       flex: 1,
       justifyContent: "flex-end", // push everything to the bottom
@@ -145,6 +193,11 @@ const createStyles = (colors: ColorPalette) =>
       backgroundColor: "#FFFFFF",
       borderWidth: 1,
       borderColor: "#E1E8ED",
+    },
+    emailButton: {
+      backgroundColor: "transparent",
+      borderWidth: 1,
+      borderColor: "#FFFFFF",
     },
 
     emailOutlineBtn: {

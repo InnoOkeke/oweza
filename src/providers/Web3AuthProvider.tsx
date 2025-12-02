@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Platform } from 'react-native';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 import Web3Auth, { LOGIN_PROVIDER } from '@web3auth/react-native-sdk';
 import { EthereumPrivateKeyProvider } from '@web3auth/ethereum-provider';
-import * as WebBrowser from 'expo-web-browser';
-import * as SecureStore from 'expo-secure-store';
+import * as WebBrowser from '@toruslabs/react-native-web-browser';
+import EncryptedStorage from 'react-native-encrypted-storage';
 import Constants, { AppOwnership } from 'expo-constants';
 import * as Linking from 'expo-linking';
 import * as AuthSession from 'expo-auth-session';
 import { createWalletClient, createPublicClient, custom, http, parseEther, Address } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 import { celoSepolia } from 'viem/chains';
 import { ethers } from 'ethers';
 import { WEB3AUTH_CLIENT_ID, WEB3AUTH_CHAIN_CONFIG, WEB3AUTH_REDIRECT_URL, WEB3AUTH_NETWORK, getLoginProviders } from '../config/web3auth';
@@ -59,6 +60,15 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
 
         const init = async () => {
             try {
+                // Warm up browser on Android to reduce time in background
+                if (Platform.OS === 'android') {
+                    console.log('🔥 Warming up browser for Android...');
+                    await WebBrowser.warmUpAsync().catch((err: any) => {
+                        console.warn('Browser warmup failed (not critical):', err);
+                    });
+                }
+
+
                 console.log('🔧 Web3Auth runtime config:', {
                     WEB3AUTH_CLIENT_ID,
                     WEB3AUTH_REDIRECT_URL,
@@ -88,11 +98,22 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
                 // Compute redirect URL based on Expo environment
                 const redirectUrl = Linking.createURL('auth', {});
 
+                // Configure custom verifier for email passwordless
+                // This makes email login use your custom "app-oweza-dev" verifier
+                const loginConfig = {
+                    email_passwordless: {
+                        verifier: "app-oweza-dev", // Your custom verifier from dashboard
+                        typeOfLogin: "email_passwordless",
+                        clientId: WEB3AUTH_CLIENT_ID,
+                    },
+                };
+
                 const options = {
                     clientId: WEB3AUTH_CLIENT_ID,
                     network: WEB3AUTH_NETWORK,
                     redirectUrl: redirectUrl,
                     privateKeyProvider,
+                    loginConfig, // Use custom verifier config
                 } as any;
 
                 console.log('Web3Auth options prepared:', {
@@ -102,7 +123,7 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
                 });
 
                 // Initialize Web3Auth with correct constructor
-                const web3authInstance = new Web3Auth(WebBrowser, SecureStore, options);
+                const web3authInstance = new Web3Auth(WebBrowser, EncryptedStorage, options);
                 await web3authInstance.init();
 
                 setWeb3auth(web3authInstance);
@@ -119,6 +140,40 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
         };
 
         init();
+
+        // Handle app state changes (background/foreground)
+        const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+            console.log('📱 App state changed to:', nextAppState);
+
+            if (nextAppState === 'active') {
+                // App has come to foreground
+                console.log('🔄 App became active, checking Web3Auth session...');
+
+                if (web3auth && web3auth.connected && web3auth.provider && !profile) {
+                    console.log('✅ Found active Web3Auth session, restoring...');
+                    try {
+                        const userInfo = await web3auth.userInfo();
+                        await handleUserAuthenticated(web3auth.provider, userInfo);
+                    } catch (err) {
+                        console.error('❌ Failed to restore session:', err);
+                    }
+                }
+            }
+        };
+
+        const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
+
+        return () => {
+            subscription.remove();
+            appStateSubscription.remove();
+
+            // Cool down browser on Android
+            if (Platform.OS === 'android') {
+                WebBrowser.coolDownAsync().catch(() => {
+                    // Ignore errors in cleanup
+                });
+            }
+        };
     }, []);
 
     const handleUserAuthenticated = async (provider: any, userInfo: any) => {
@@ -169,7 +224,14 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
 
     const login = async (provider?: string, email?: string) => {
         if (!web3auth) {
-            setError('Web3Auth not initialized');
+            const errorMsg = 'Web3Auth not initialized';
+            console.error(errorMsg);
+            setError(errorMsg);
+            return;
+        }
+
+        if (web3auth.connected) {
+            console.log('⚠️ Already logged in');
             return;
         }
 
@@ -177,48 +239,133 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
             setLoading(true);
             setError(null);
 
-            // Determine which provider to use
-            let loginProvider: string;
-            let extraLoginOptions: any = {};
+            console.log(`🔐 Initiating login with provider: ${provider || 'email'}`);
+
+            // Web3Auth Login Parameters (Official SDK Pattern)
+            let loginParams: {
+                loginProvider: string;
+                extraLoginOptions?: {
+                    login_hint?: string;
+                    [key: string]: any;
+                };
+                redirectUrl?: string;
+            };
 
             if (provider === 'google') {
-                loginProvider = LOGIN_PROVIDER.GOOGLE;
+                loginParams = {
+                    loginProvider: LOGIN_PROVIDER.GOOGLE,
+                    redirectUrl: Linking.createURL('auth'),
+                };
             } else if (provider === 'apple') {
-                loginProvider = LOGIN_PROVIDER.APPLE;
-            } else if (provider === 'email' && email) {
-                loginProvider = LOGIN_PROVIDER.EMAIL_PASSWORDLESS;
-                extraLoginOptions = { login_hint: email };
+                loginParams = {
+                    loginProvider: LOGIN_PROVIDER.APPLE,
+                    redirectUrl: Linking.createURL('auth'),
+                };
+            } else if (email) {
+                loginParams = {
+                    loginProvider: LOGIN_PROVIDER.EMAIL_PASSWORDLESS,
+                    extraLoginOptions: {
+                        login_hint: email,
+                    },
+                    redirectUrl: Linking.createURL('auth'),
+                };
             } else {
-                // Default to email passwordless if no provider specified
-                loginProvider = LOGIN_PROVIDER.EMAIL_PASSWORDLESS;
+                throw new Error('Invalid login parameters: provider or email required');
             }
 
-            console.log(`🔐 Logging in with ${loginProvider}...`, extraLoginOptions);
+            console.log('📤 Calling Web3Auth login with params:', {
+                provider: loginParams.loginProvider,
+                hasExtraOptions: !!loginParams.extraLoginOptions,
+                redirectUrl: loginParams.redirectUrl,
+            });
 
-            await web3auth.login({ loginProvider, extraLoginOptions });
+            // Official Web3Auth login call
+            await web3auth.login(loginParams);
 
-            if (web3auth.connected && web3auth.provider) {
-                const userInfo = await web3auth.userInfo();
-                await handleUserAuthenticated(web3auth.provider, userInfo);
+            console.log('✅ Login successful, connection status:', web3auth.connected);
+
+            // Verify connection and get user info
+            if (!web3auth.connected) {
+                throw new Error('Login completed but connection not established');
             }
-        } catch (err) {
-            console.error('Login error:', err);
-            setError(err instanceof Error ? err.message : 'Login failed');
+
+            if (!web3auth.provider) {
+                throw new Error('Login completed but provider not available');
+            }
+
+            // Get user information (official SDK method)
+            const userInfo = await web3auth.userInfo();
+            console.log('👤 User info retrieved:', {
+                email: userInfo?.email,
+                name: userInfo?.name,
+                verifier: userInfo?.verifier,
+                verifierId: userInfo?.verifierId,
+            });
+
+            // Process authenticated user
+            await handleUserAuthenticated(web3auth.provider, userInfo);
+
+            console.log('🎉 Login flow completed successfully');
+        } catch (err: any) {
+            console.error('❌ Login error:', err);
+
+            // Clear any partial state
+            setProfile(null);
+            setWalletAddress(null);
+
+            // User-friendly error messages
+            let errorMessage = 'Login failed';
+            if (err?.message?.includes('User cancelled') || err?.message?.includes('user closed')) {
+                errorMessage = 'Login cancelled by user';
+            } else if (err?.message?.includes('network')) {
+                errorMessage = 'Network error. Please check your connection';
+            } else if (err?.message) {
+                errorMessage = err.message;
+            }
+
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
     const logout = async () => {
-        if (!web3auth) return;
+        if (!web3auth) {
+            console.warn('⚠️ Web3Auth not initialized');
+            return;
+        }
 
-        try {
-            await web3auth.logout();
+        if (!web3auth.connected) {
+            console.log('⚠️ Already logged out');
+            // Clean up state anyway
             setProfile(null);
             setWalletAddress(null);
             setError(null);
-        } catch (err) {
-            console.error('Logout error:', err);
+            return;
+        }
+
+        try {
+            console.log('🔓 Logging out...');
+
+            // Official Web3Auth logout
+            await web3auth.logout();
+
+            // Clear all auth state
+            setProfile(null);
+            setWalletAddress(null);
+            setError(null);
+
+            console.log('✅ Logout successful');
+        } catch (err: any) {
+            console.error('❌ Logout error:', err);
+
+            // Even if logout fails, clear local state
+            setProfile(null);
+            setWalletAddress(null);
+            setError(null);
+
+            // Log error but don't show to user since state is cleared
+            console.warn('Logout completed with errors, but local state cleared');
         }
     };
 
@@ -235,11 +382,10 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
         try {
             console.log("🚀 Sending gasless transaction on Celo");
 
-            const call = calls[0];
-            if (!call) throw new Error("No calls provided");
+            if (calls.length === 0) throw new Error("No calls provided");
 
             // Get private key from provider
-            const privateKey = await (web3auth.provider as any).getPrivateKey();
+            const privateKey = await web3auth.provider.request({ method: "eth_private_key" });
 
             // Create wallet client with private key
             const account = privateKeyToAccount(`0x${privateKey}` as `0x${string}`);
@@ -250,27 +396,34 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
                 transport: http(),
             });
 
-            // Send transaction with feeCurrency (pay gas in cUSD!)
-            const hash = await walletClient.sendTransaction({
-                account,
-                to: call.to as Address,
-                data: call.data as `0x${string}`,
-                value: call.value ? parseEther(call.value.toString()) : 0n,
-                // @ts-ignore - feeCurrency is Celo-specific
-                feeCurrency: CUSD_TOKEN_ADDRESS,
-            });
+            let lastHash = "";
 
-            console.log("✅ Gasless transaction sent:", hash);
+            for (const call of calls) {
+                console.log(`🚀 Sending transaction to ${call.to}`);
 
-            // Wait for confirmation
-            const publicClient = createPublicClient({
-                chain: celoSepolia,
-                transport: http(),
-            });
+                // Send transaction with feeCurrency (pay gas in cUSD!)
+                const hash = await walletClient.sendTransaction({
+                    account,
+                    to: call.to as Address,
+                    data: call.data as `0x${string}`,
+                    value: call.value ? parseEther(call.value.toString()) : 0n,
+                    // @ts-ignore - feeCurrency is Celo-specific
+                    feeCurrency: CUSD_TOKEN_ADDRESS,
+                });
 
-            await publicClient.waitForTransactionReceipt({ hash });
+                console.log("✅ Transaction sent:", hash);
+                lastHash = hash;
 
-            return { userOperationHash: hash };
+                // Wait for confirmation before sending the next one
+                const publicClient = createPublicClient({
+                    chain: celoSepolia,
+                    transport: http(),
+                });
+
+                await publicClient.waitForTransactionReceipt({ hash });
+            }
+
+            return { userOperationHash: lastHash };
         } catch (err) {
             console.error("❌ Transaction failed:", err);
             throw err;
@@ -296,12 +449,7 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
     );
 };
 
-// Helper to convert private key to account
-function privateKeyToAccount(privateKey: `0x${string}`) {
-    // Import from viem/accounts
-    const { privateKeyToAccount } = require('viem/accounts');
-    return privateKeyToAccount(privateKey);
-}
+// Helper to convert private key to account - REMOVED, using top-level import instead
 
 export const Web3AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
     return (
