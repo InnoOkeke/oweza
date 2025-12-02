@@ -107,8 +107,8 @@ export const ClaimScreen: React.FC = () => {
           <Text style={styles.errorTitle}>Unable to Load Transfer</Text>
           <Text style={styles.errorMessage}>{error || "Transfer not found"}</Text>
           <PrimaryButton
-            title="Go to Home"
-            onPress={() => navigation.navigate("Home")}
+            title={isConnected ? "Go to Home" : "Go to Sign In"}
+            onPress={() => isConnected ? navigation.navigate("Home") : navigation.navigate("SignIn")}
           />
         </View>
       </View>
@@ -151,7 +151,7 @@ export const ClaimScreen: React.FC = () => {
 
             <PrimaryButton
               title="Sign In"
-              onPress={() => navigation.navigate("Home")}
+              onPress={() => navigation.navigate("SignIn")}
             />
           </View>
         </ScrollView>
@@ -236,152 +236,152 @@ export const ClaimScreen: React.FC = () => {
 };
 
 const createStyles = (colors: ColorPalette) =>
-      StyleSheet.create({
-        container: {
-          flex: 1,
-          backgroundColor: colors.background,
-          justifyContent: "center",
-          alignItems: "center",
-        },
-        scrollContent: {
-          flexGrow: 1,
-          padding: spacing.lg,
-          justifyContent: "center",
-        },
-        card: {
-          backgroundColor: colors.cardBackground,
-          borderRadius: 18,
-          padding: spacing.xl,
-          alignItems: "center",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 4,
-        },
-        errorCard: {
-          backgroundColor: colors.cardBackground,
-          borderRadius: 18,
-          padding: spacing.xl,
-          alignItems: "center",
-          maxWidth: 400,
-          margin: spacing.lg,
-        },
-        icon: {
-          fontSize: 64,
-          marginBottom: spacing.md,
-        },
-        errorIcon: {
-          fontSize: 64,
-          marginBottom: spacing.md,
-        },
-        title: {
-          ...typography.title,
-          color: colors.textPrimary,
-          textAlign: "center",
-          marginBottom: spacing.sm,
-        },
-        errorTitle: {
-          ...typography.subtitle,
-          color: colors.textPrimary,
-          textAlign: "center",
-          marginBottom: spacing.md,
-        },
-        amount: {
-          fontSize: 42,
-          fontWeight: "bold",
-          color: colors.primary,
-          marginBottom: spacing.xs,
-        },
-        fromText: {
-          ...typography.body,
-          color: colors.textSecondary,
-          textAlign: "center",
-          marginBottom: spacing.lg,
-        },
-        divider: {
-          width: "100%",
-          height: 1,
-          backgroundColor: colors.border,
-          marginVertical: spacing.lg,
-        },
-        instructionTitle: {
-          ...typography.subtitle,
-          color: colors.textPrimary,
-          marginBottom: spacing.sm,
-          textAlign: "center",
-        },
-        instruction: {
-          ...typography.body,
-          color: colors.textSecondary,
-          textAlign: "center",
-          marginBottom: spacing.lg,
-        },
-        detailsSection: {
-          width: "100%",
-          backgroundColor: colors.background,
-          borderRadius: 12,
-          padding: spacing.md,
-          marginBottom: spacing.lg,
-        },
-        detailRow: {
-          flexDirection: "row",
-          justifyContent: "space-between",
-          marginBottom: spacing.sm,
-        },
-        detailLabel: {
-          ...typography.body,
-          color: colors.textSecondary,
-        },
-        detailValue: {
-          ...typography.body,
-          color: colors.textPrimary,
-          fontWeight: "600",
-        },
-        messageBox: {
-          width: "100%",
-          backgroundColor: colors.background,
-          borderRadius: 12,
-          borderLeftWidth: 4,
-          borderLeftColor: colors.primary,
-          padding: spacing.md,
-          marginBottom: spacing.lg,
-        },
-        messageLabel: {
-          ...typography.caption,
-          color: colors.textSecondary,
-          marginBottom: spacing.xs,
-          textTransform: "uppercase",
-        },
-        messageText: {
-          ...typography.body,
-          color: colors.textPrimary,
-          fontStyle: "italic",
-        },
-        infoBox: {
-          width: "100%",
-          backgroundColor: colors.accent + "20",
-          borderRadius: 8,
-          padding: spacing.md,
-        },
-        infoText: {
-          ...typography.caption,
-          color: colors.textSecondary,
-          textAlign: "center",
-        },
-        errorMessage: {
-          ...typography.body,
-          color: colors.textSecondary,
-          textAlign: "center",
-          marginBottom: spacing.md,
-        },
-        bold: {
-          fontWeight: "bold",
-          color: colors.textPrimary,
-        },
-        loadingText: {
-          ...typography.body,
-          color: colors.textSecondary,
-          marginTop: spacing.md,
-        },
-      });
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    scrollContent: {
+      flexGrow: 1,
+      padding: spacing.lg,
+      justifyContent: "center",
+    },
+    card: {
+      backgroundColor: colors.cardBackground,
+      borderRadius: 18,
+      padding: spacing.xl,
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    errorCard: {
+      backgroundColor: colors.cardBackground,
+      borderRadius: 18,
+      padding: spacing.xl,
+      alignItems: "center",
+      maxWidth: 400,
+      margin: spacing.lg,
+    },
+    icon: {
+      fontSize: 64,
+      marginBottom: spacing.md,
+    },
+    errorIcon: {
+      fontSize: 64,
+      marginBottom: spacing.md,
+    },
+    title: {
+      ...typography.title,
+      color: colors.textPrimary,
+      textAlign: "center",
+      marginBottom: spacing.sm,
+    },
+    errorTitle: {
+      ...typography.subtitle,
+      color: colors.textPrimary,
+      textAlign: "center",
+      marginBottom: spacing.md,
+    },
+    amount: {
+      fontSize: 42,
+      fontWeight: "bold",
+      color: colors.primary,
+      marginBottom: spacing.xs,
+    },
+    fromText: {
+      ...typography.body,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: spacing.lg,
+    },
+    divider: {
+      width: "100%",
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: spacing.lg,
+    },
+    instructionTitle: {
+      ...typography.subtitle,
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+      textAlign: "center",
+    },
+    instruction: {
+      ...typography.body,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: spacing.lg,
+    },
+    detailsSection: {
+      width: "100%",
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    detailRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: spacing.sm,
+    },
+    detailLabel: {
+      ...typography.body,
+      color: colors.textSecondary,
+    },
+    detailValue: {
+      ...typography.body,
+      color: colors.textPrimary,
+      fontWeight: "600",
+    },
+    messageBox: {
+      width: "100%",
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.primary,
+      padding: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    messageLabel: {
+      ...typography.caption,
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+      textTransform: "uppercase",
+    },
+    messageText: {
+      ...typography.body,
+      color: colors.textPrimary,
+      fontStyle: "italic",
+    },
+    infoBox: {
+      width: "100%",
+      backgroundColor: colors.accent + "20",
+      borderRadius: 8,
+      padding: spacing.md,
+    },
+    infoText: {
+      ...typography.caption,
+      color: colors.textSecondary,
+      textAlign: "center",
+    },
+    errorMessage: {
+      ...typography.body,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginBottom: spacing.md,
+    },
+    bold: {
+      fontWeight: "bold",
+      color: colors.textPrimary,
+    },
+    loadingText: {
+      ...typography.body,
+      color: colors.textSecondary,
+      marginTop: spacing.md,
+    },
+  });

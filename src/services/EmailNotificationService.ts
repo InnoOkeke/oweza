@@ -117,7 +117,6 @@ class EmailNotificationService {
               
               <ul>
                 <li>✅ Send to any email address</li>
-                <li>✅ Support for multiple blockchains</li>
                 <li>✅ Gasless transfers with Celo Fee Abstraction</li>
                 <li>✅ Secure Smart Wallet</li>
               </ul>

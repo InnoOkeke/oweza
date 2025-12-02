@@ -1,5 +1,6 @@
 // import { CdpClient } from "@coinbase/cdp-sdk"; // Removed - using Celo native
-import { Hex, createPublicClient, encodeAbiParameters, http, keccak256, parseUnits, stringToBytes, zeroAddress, encodeFunctionData } from "viem";
+import { Hex, createPublicClient, createWalletClient, encodeAbiParameters, http, keccak256, parseUnits, stringToBytes, zeroAddress, encodeFunctionData } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { celo, celoAlfajores } from "viem/chains";
 import SharedEscrowArtifact from "./abi/SharedEscrow.json";
 // import { PAYMASTER_API_URL, CUSD_TOKEN_ADDRESS } from "../../config/celo.server"; // Removed server-only import
@@ -80,6 +81,7 @@ class SharedEscrowDriver {
   private readonly expirySeconds: number;
   private readonly saltBytes32: Hex;
   private publicClient;
+  private walletClient;
 
   constructor() {
     const config = getConfig();
@@ -109,6 +111,22 @@ class SharedEscrowDriver {
 
     const rpcUrl = config.ESCROW_RPC_URL || this.chain.rpcUrls.default.http[0];
     this.publicClient = createPublicClient({ chain: this.chain, transport: http(rpcUrl) });
+
+    // Initialize wallet client if private key is available
+    const relayerKey = config.ESCROW_RELAYER_PRIVATE_KEY;
+    if (relayerKey) {
+      try {
+        const account = privateKeyToAccount(relayerKey as `0x${string}`);
+        this.walletClient = createWalletClient({
+          account,
+          chain: this.chain,
+          transport: http(rpcUrl)
+        });
+        console.log("✅ SharedEscrowDriver: Wallet client initialized");
+      } catch (error) {
+        console.error("❌ SharedEscrowDriver: Failed to initialize wallet client", error);
+      }
+    }
   }
 
   /**
@@ -158,6 +176,50 @@ class SharedEscrowDriver {
       ],
     });
 
+    // Execute transaction if wallet client is available
+    if (this.walletClient) {
+      try {
+        const hash = await this.walletClient.writeContract({
+          address: this.contractAddress,
+          abi: SHARED_ESCROW_ABI,
+          functionName: "createTransfer",
+          args: [
+            {
+              transferId,
+              token: input.tokenAddress ?? this.tokenAddress,
+              fundingWallet: input.fundingWallet ?? this.fundingWallet,
+              amount: amountAtomic,
+              recipientHash,
+              expiry,
+            },
+            {
+              enabled: false,
+              value: 0n,
+              deadline: 0,
+              v: 0,
+              r: ZERO_HASH,
+              s: ZERO_HASH,
+            },
+          ],
+        });
+        console.log(`✅ Create transfer transaction sent: ${hash}`);
+        return {
+          transferId,
+          recipientHash,
+          expiry,
+          userOpHash: hash,
+          callData,
+          to: this.contractAddress,
+          value: 0n
+        };
+      } catch (error) {
+        console.error("❌ Failed to execute create transfer transaction:", error);
+        throw error;
+      }
+    }
+
+    console.warn("⚠️ No wallet client configured - generating call data only");
+
     // Return the data needed to execute the transaction
     return {
       transferId,
@@ -173,26 +235,47 @@ class SharedEscrowDriver {
   async claimTransfer(transferId: Hex, recipientAddress: `0x${string}`, recipientEmail: string): Promise<EscrowClaimReceipt> {
     const recipientHash = this.computeRecipientHash(recipientEmail.trim().toLowerCase());
 
-    const callData = encodeFunctionData({
-      abi: SHARED_ESCROW_ABI,
-      functionName: "claimTransfer",
-      args: [transferId, recipientAddress, recipientHash],
-    });
+    if (this.walletClient) {
+      try {
+        const hash = await this.walletClient.writeContract({
+          address: this.contractAddress,
+          abi: SHARED_ESCROW_ABI,
+          functionName: "claimTransfer",
+          args: [transferId, recipientAddress, recipientHash],
+        });
+        console.log(`✅ Claim transaction sent: ${hash}`);
+        return { transferId, userOpHash: hash };
+      } catch (error) {
+        console.error("❌ Failed to execute claim transaction:", error);
+        throw error;
+      }
+    }
 
-    // TODO: If this is called from RN, we should return callData. 
-    // Currently claim is mostly server-side or by the recipient wallet directly.
-
-    return { transferId, userOpHash: "0x" as Hex };
+    console.warn("⚠️ No wallet client configured - generating call data only");
+    // For claim/refund, we must execute the transaction or fail, as we don't return callData for client execution
+    throw new Error("Server wallet not configured. Cannot execute claim transaction.");
   }
 
   async refundTransfer(transferId: Hex, refundAddress: `0x${string}`): Promise<EscrowRefundReceipt> {
-    const callData = encodeFunctionData({
-      abi: SHARED_ESCROW_ABI,
-      functionName: "refundTransfer",
-      args: [transferId, refundAddress],
-    });
+    if (this.walletClient) {
+      try {
+        const hash = await this.walletClient.writeContract({
+          address: this.contractAddress,
+          abi: SHARED_ESCROW_ABI,
+          functionName: "refundTransfer",
+          args: [transferId, refundAddress],
+        });
+        console.log(`✅ Refund transaction sent: ${hash}`);
+        return { transferId, userOpHash: hash };
+      } catch (error) {
+        console.error("❌ Failed to execute refund transaction:", error);
+        throw error;
+      }
+    }
 
-    return { transferId, userOpHash: "0x" as Hex };
+    console.warn("⚠️ No wallet client configured - generating call data only");
+    // For claim/refund, we must execute the transaction or fail
+    throw new Error("Server wallet not configured. Cannot execute refund transaction.");
   }
 
   async loadOnchainTransfer(transferId: Hex): Promise<OnchainTransferState | null> {

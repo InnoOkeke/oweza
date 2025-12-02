@@ -38,11 +38,12 @@ services:
       - key: SUPPORT_EMAIL
         value: noreply@kellon.xyz
       - key: ESCROW_CONTRACT_ADDRESS
-        value: 0x89056f123C0C274Ad2Ae15E3d513064b0b5211c0
+        value: 0x3D5887BcD5953af75D1F27fc5599dD99f1B6384c
+
       - key: ESCROW_TREASURY_WALLET
         value: 0x9fa9C08Bb83cf70774fd38Ee638ad98D4B6CBDCf
       - key: ESCROW_TOKEN_ADDRESS
-        value: 0xA99dC247d6b7B2E3ab48a1fEE101b83cD6aCd82a
+        value: 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
       - key: ESCROW_NETWORK
         value: celo-sepolia
       - key: ESCROW_RPC_URL
@@ -81,7 +82,7 @@ services:
           name: oweza-api
           envVarKey: CRON_SECRET
       - key: ESCROW_CONTRACT_ADDRESS
-        value: 0x89056f123C0C274Ad2Ae15E3d513064b0b5211c0
+        value: 0x3D5887BcD5953af75D1F27fc5599dD99f1B6384c
       - key: ESCROW_TREASURY_WALLET
         value: 0x9fa9C08Bb83cf70774fd38Ee638ad98D4B6CBDCf
       - key: CELO_RPC_URL

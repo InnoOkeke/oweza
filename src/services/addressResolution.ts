@@ -37,7 +37,7 @@ export async function resolveEmailToWallet({ email }: EmailLookupRequest): Promi
   return {
     email: normalizedEmail,
     isRegistered: true,
-    walletAddress: user.wallets.base,
+    walletAddress: user.wallets?.celo,
     displayName: user.profile.displayName,
     avatar: user.profile.avatar,
   } satisfies EmailLookupResult;

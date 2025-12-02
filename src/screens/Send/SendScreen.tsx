@@ -288,8 +288,11 @@ export const SendScreen: React.FC = () => {
 
   const recipientInfo = useMemo(() => {
     if (!emailLookup) return null;
+    if (emailLookup.isRegistered && emailLookup.walletAddress) {
+      return `Registered user (${emailLookup.walletAddress.slice(0, 6)}...${emailLookup.walletAddress.slice(-4)})`;
+    }
     return emailLookup.isRegistered
-      ? `Registered user (${emailLookup.walletAddress?.slice(0, 6)}...${emailLookup.walletAddress?.slice(-4)})`
+      ? "Registered user"
       : "New user - will receive invite email";
   }, [emailLookup]);
 
