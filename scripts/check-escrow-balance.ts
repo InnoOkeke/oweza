@@ -11,7 +11,7 @@ dotenv.config();
 
 const ESCROW_CONTRACT_ADDRESS = '0x3d5887bcd5953af75d1f27fc5599dd99f1b6384c';
 const CUSD_TOKEN_ADDRESS = '0xdE9e4C3ce781b4ba68120d6261cbad65ce0ab00b'; // Celo Sepolia cUSD
-const RPC_URL = process.env.CELO_RPC_URL || 'https://alfajores-forno.celo-testnet.org';
+const RPC_URL = process.env.CELO_RPC_URL || '';
 
 // ERC20 ABI (minimal)
 const ERC20_ABI = [
