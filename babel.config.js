@@ -40,5 +40,16 @@ module.exports = function (api) {
     parserOpts: {
       plugins: ['deprecatedImportAssert'],
     },
+    overrides: [
+      {
+        test: (filename) => {
+          if (!filename) return false;
+          const normalizedPath = filename.replace(/\\/g, '/');
+          return normalizedPath.includes('node_modules/react-native-qrcode-svg/src/') ||
+            normalizedPath.includes('node_modules/expo-barcode-generator/');
+        },
+        presets: ['module:metro-react-native-babel-preset'],
+      },
+    ],
   };
 };

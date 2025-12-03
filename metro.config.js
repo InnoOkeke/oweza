@@ -3,6 +3,22 @@ const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
+// Ensure we handle all source extensions
+config.resolver.sourceExts = [...config.resolver.sourceExts, 'jsx', 'js', 'ts', 'tsx', 'cjs', 'mjs'];
+// Remove duplicates
+config.resolver.sourceExts = [...new Set(config.resolver.sourceExts)];
+
+// Force transformation of specific node_modules packages that contain JSX
+config.transformer = {
+    ...config.transformer,
+    getTransformOptions: async () => ({
+        transform: {
+            experimentalImportSupport: false,
+            inlineRequires: true,
+        },
+    }),
+};
+
 config.resolver.extraNodeModules = {
     ...config.resolver.extraNodeModules,
     crypto: require.resolve('./crypto-polyfill'),
@@ -38,7 +54,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
             type: 'sourceFile',
         };
     }
-    
+
     // Check if it's a subpath import from any of our mocked packages
     const mockedPackages = [
         'porto/',
@@ -52,19 +68,19 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
         '@blocto/sdk/',
         'magic-sdk/',
     ];
-    
+
     if (mockedPackages.some(pkg => moduleName.startsWith(pkg))) {
         return {
             filePath: path.resolve(__dirname, 'empty-module.js'),
             type: 'sourceFile',
         };
     }
-    
+
     // Otherwise, use the default resolver
     if (defaultResolver) {
         return defaultResolver(context, moduleName, platform);
     }
-    
+
     // Fallback to context's default resolver
     return context.resolveRequest(context, moduleName, platform);
 };

@@ -36,9 +36,9 @@ export type RootStackParamList = {
   CreateInvoice: undefined;
   Gifts: { giftId?: string } | undefined;
   Claim: { transferId: string };
-  Deposit: undefined;
+  Deposit: { type?: 'local' | 'wallet' } | undefined;
   Providers: { amount: string; method: string };
-  Withdraw: undefined;
+  Withdraw: { type?: 'wallet' | 'local' };
   AddFunds: undefined;
 };
 

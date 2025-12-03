@@ -745,12 +745,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   style={styles.inlineSendButton}
                   onPress={() => {
                     setIsDepositModalVisible(false);
-                    navigation.navigate("Deposit");
+                    navigation.navigate("Deposit", { type: 'local' });
                   }}
                 >
                   <View style={styles.inlineSendButtonCopy}>
                     <Text style={styles.inlineSendButtonTitle}>Local Payment Method</Text>
-                    <Text style={styles.inlineSendButtonSubtitle}>Bank transfer, Card</Text>
+                    <Text style={styles.inlineSendButtonSubtitle}>Buy crypto with cards, bank, or mobile money</Text>
                   </View>
                   <Text style={styles.inlineSendBadge}>🏦</Text>
                 </TouchableOpacity>
@@ -759,12 +759,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   style={styles.inlineSendButton}
                   onPress={() => {
                     setIsDepositModalVisible(false);
-                    navigation.navigate("AddFunds");
+                    navigation.navigate("Deposit", { type: 'wallet' });
                   }}
                 >
                   <View style={styles.inlineSendButtonCopy}>
-                    <Text style={styles.inlineSendButtonTitle}>Wallet or Exchange</Text>
-                    <Text style={styles.inlineSendButtonSubtitle}>Buy crypto with cards, bank, or mobile money</Text>
+                    <Text style={styles.inlineSendButtonTitle}>Exchange or Wallet</Text>
+                    <Text style={styles.inlineSendButtonSubtitle}>Deposit from your wallet or exchange</Text>
                   </View>
                   <Text style={styles.inlineSendBadge}>👛</Text>
                 </TouchableOpacity>
@@ -802,7 +802,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   style={styles.inlineSendButton}
                   onPress={() => {
                     setIsWithdrawModalVisible(false);
-                    navigation.navigate("Withdraw");
+                    navigation.navigate("Withdraw", { type: 'local' });
                   }}
                 >
                   <View style={styles.inlineSendButtonCopy}>
@@ -816,7 +816,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   style={styles.inlineSendButton}
                   onPress={() => {
                     setIsWithdrawModalVisible(false);
-                    setSelectedRampType("offramp");
+                    navigation.navigate("Withdraw", { type: 'wallet' });
                   }}
                 >
                   <View style={styles.inlineSendButtonCopy}>
@@ -1953,6 +1953,101 @@ const createStyles = (colors: ColorPalette) =>
     tabLabelActive: {
       color: colors.primary,
       fontWeight: "600",
+    },
+
+    // Deposit Modal Styles
+    depositModalHeader: {
+      marginBottom: spacing.lg,
+    },
+    depositModalTitle: {
+      ...typography.title,
+      fontSize: 24,
+      fontWeight: "700",
+      color: colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    depositModalSubtitle: {
+      ...typography.body,
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    depositMethodsContainer: {
+      gap: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    depositMethodCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.cardBackground,
+      borderRadius: 16,
+      padding: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    depositMethodCardDisabled: {
+      opacity: 0.6,
+      backgroundColor: `${colors.background}80`,
+    },
+    depositMethodIconContainer: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: `${colors.primary}10`,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: spacing.md,
+    },
+    depositMethodIcon: {
+      fontSize: 24,
+    },
+    depositMethodContent: {
+      flex: 1,
+      marginRight: spacing.sm,
+    },
+    depositMethodTitle: {
+      ...typography.subtitle,
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.textPrimary,
+      marginBottom: 2,
+    },
+    depositMethodDescription: {
+      ...typography.caption,
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    depositMethodBadge: {
+      alignSelf: "flex-start",
+      backgroundColor: `${colors.success}20`,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: 6,
+      marginTop: spacing.xs,
+    },
+    depositMethodBadgeComingSoon: {
+      backgroundColor: `${colors.textSecondary}20`,
+    },
+    depositMethodBadgeText: {
+      ...typography.caption,
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.success,
+      textTransform: "uppercase",
+    },
+    depositMethodBadgeTextComingSoon: {
+      color: colors.textSecondary,
+    },
+    depositMethodArrow: {
+      width: 32,
+      height: 32,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    depositMethodArrowText: {
+      fontSize: 20,
+      color: colors.textSecondary,
+      fontWeight: "300",
     },
 
     // Settings Screen Styles
