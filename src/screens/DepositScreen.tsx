@@ -1,7 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import Svg, { Rect, Path } from 'react-native-svg';
-import QRCodeUtil from 'qrcode';
-
 
 import {
   View,
@@ -38,6 +35,7 @@ import {
   type OnrampProvider,
 } from "../services/onramp";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { QRCodeGenerator } from "../components/QRCodeGenerator";
 import { useToast } from "../utils/toast";
 
 const { width } = Dimensions.get('window');
@@ -278,7 +276,7 @@ export const DepositScreen: React.FC<Props> = ({ navigation, route }) => {
         )}
         <WebView
           source={{ uri: webViewUrl }}
-          onLoad Start={() => setWebViewLoading(true)}
+          onLoadStart={() => setWebViewLoading(true)}
           onLoadEnd={() => setWebViewLoading(false)}
           onError={() => {
             setWebViewLoading(false);
@@ -306,9 +304,6 @@ export const DepositScreen: React.FC<Props> = ({ navigation, route }) => {
           >
             {/* Hero Header */}
             <View style={styles.heroHeader}>
-              <View style={styles.heroIconContainer}>
-                <Text style={styles.heroIcon}>💰</Text>
-              </View>
               <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
                 Receive Funds
               </Text>
@@ -328,7 +323,10 @@ export const DepositScreen: React.FC<Props> = ({ navigation, route }) => {
                   {profile?.walletAddress ? (
                     <View style={[styles.qrCodeContainer, { backgroundColor: '#FFFFFF' }]}>
                       <QRCodeGenerator
-                        value={profile.walletAddress}
+                        value={JSON.stringify({
+                          address: profile.walletAddress,
+                          email: profile.email
+                        })}
                         size={200}
                         color="#000000"
                         backgroundColor="#FFFFFF"
@@ -475,9 +473,6 @@ export const DepositScreen: React.FC<Props> = ({ navigation, route }) => {
         >
           {/* Hero Header */}
           <View style={styles.heroHeader}>
-            <View style={styles.heroIconContainer}>
-              <Text style={styles.heroIcon}>💳</Text>
-            </View>
             <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
               Add Funds
             </Text>

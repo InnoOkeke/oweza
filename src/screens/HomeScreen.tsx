@@ -35,6 +35,7 @@ import {
 import { useRecentActivity, ActivityItem } from "../hooks/useRecentActivity";
 import { TransactionCard } from "../components/TransactionCard";
 import { TransactionDetailsModal } from "../components/TransactionDetailsModal";
+import { QRScanner } from "../components/QRScanner";
 
 export type HomeScreenProps = NativeStackScreenProps<RootStackParamList, "Home">;
 
@@ -57,6 +58,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [showWebView, setShowWebView] = useState(false);
   const [webViewLoading, setWebViewLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"home" | "settings">("home");
+  const [isQRScannerVisible, setIsQRScannerVisible] = useState(false);
 
   const [availableProviders, setAvailableProviders] = useState<RampProvider[]>([]);
   const [locationPermission, setLocationPermission] = useState<LocationPermissionStatus>('undetermined');
@@ -367,6 +369,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setIsWithdrawModalVisible(true);
   };
 
+  const handleScanQR = () => {
+    setIsQRScannerVisible(true);
+  };
+
+  const handleQRScanned = (data: { address: string; email?: string }) => {
+    setIsQRScannerVisible(false);
+    // Navigate to Send screen with email pre-populated
+    if (data.email) {
+      navigation.navigate("Send", { recipientEmail: data.email });
+    } else {
+      // If only address is available, navigate anyway (user can still send to address)
+      navigation.navigate("Send", { recipientAddress: data.address });
+    }
+  };
+
   const handleProviderSelect = (provider: RampProvider) => {
     setSelectedProvider(provider);
     openRamp(provider);
@@ -522,11 +539,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     <Text style={styles.username}>{(profile?.username ?? profile?.displayName ?? profile?.email ?? 'user').split('@')[0].split(' ')[0]}</Text>
                   </View>
                   <View style={styles.profileActions}>
-                    <TouchableOpacity style={styles.locationIcon} onPress={handleLocationIconPress}>
-                      <Text style={styles.locationEmoji}>📍</Text>
-                      {userCountryCode && (
-                        <Text style={styles.locationText}>{userCountryCode}</Text>
-                      )}
+                    <TouchableOpacity style={styles.locationIcon} onPress={handleScanQR}>
+                      <Text style={styles.locationEmoji}>📷</Text>
+                      <Text style={styles.locationText}>Scan QR</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -631,6 +646,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     <Text style={styles.actionIcon}>💰</Text>
                   </View>
                   <Text style={styles.actionLabel}>Withdraw</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionCard} onPress={handleScanQR}>
+                  <View style={styles.actionIconContainer}>
+                    <Text style={styles.actionIcon}>📷</Text>
+                  </View>
+                  <Text style={styles.actionLabel}>Scan QR</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionCard} onPress={() => setIsMoreFeaturesModalVisible(true)}>
                   <View style={styles.actionIconContainer}>
@@ -1212,6 +1233,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           message={toast.message}
           type={toast.type}
           onDismiss={hideToast}
+        />
+
+        {/* QR Scanner */}
+        <QRScanner
+          visible={isQRScannerVisible}
+          onClose={() => setIsQRScannerVisible(false)}
+          onScan={handleQRScanned}
         />
       </SafeAreaView>
     </>

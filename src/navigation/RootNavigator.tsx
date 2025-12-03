@@ -27,7 +27,7 @@ import { RETURNING_USER_KEY, BIOMETRIC_AUTH_KEY } from "../constants/auth";
 export type RootStackParamList = {
   SignIn: undefined;
   Home: undefined;
-  Send: undefined;
+  Send: { recipientEmail?: string; recipientAddress?: string } | undefined;
   InternationalTransfer: undefined;
   OffRamp: undefined;
   TransactionHistory: undefined;

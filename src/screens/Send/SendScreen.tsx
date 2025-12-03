@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, Modal, Pressable, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -35,6 +35,7 @@ type FieldErrors = Partial<Record<keyof FormState, string>>;
 
 export const SendScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, "Send">>();
   const { profile, sendUserOperation } = useAuth();
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -47,6 +48,13 @@ export const SendScreen: React.FC = () => {
   const [pendingIntent, setPendingIntent] = useState<TransferIntent | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { toast, showToast, hideToast } = useToast();
+
+  // Pre-populate email from route params (e.g., from QR scanner)
+  useEffect(() => {
+    if (route.params?.recipientEmail) {
+      setForm(prev => ({ ...prev, email: route.params!.recipientEmail! }));
+    }
+  }, [route.params?.recipientEmail]);
 
   // Query cUSD balance
   const { data: cusdBalance, isLoading: loadingBalance } = useQuery({
