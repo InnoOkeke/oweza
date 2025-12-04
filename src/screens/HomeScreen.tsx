@@ -541,7 +541,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   <View style={styles.profileActions}>
                     <TouchableOpacity style={styles.locationIcon} onPress={handleScanQR}>
                       <Text style={styles.locationEmoji}>📷</Text>
-                      <Text style={styles.locationText}>Scan QR</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -647,12 +646,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   </View>
                   <Text style={styles.actionLabel}>Withdraw</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.actionCard} onPress={handleScanQR}>
-                  <View style={styles.actionIconContainer}>
-                    <Text style={styles.actionIcon}>📷</Text>
-                  </View>
-                  <Text style={styles.actionLabel}>Scan QR</Text>
-                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.actionCard} onPress={() => setIsMoreFeaturesModalVisible(true)}>
                   <View style={styles.actionIconContainer}>
                     <Text style={styles.actionIcon}>✨</Text>

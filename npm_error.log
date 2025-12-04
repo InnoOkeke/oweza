@@ -1,0 +1,36 @@
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: @nomicfoundation/hardhat-ethers@4.0.3
+npm error Found: hardhat@2.27.1
+npm error node_modules/hardhat
+npm error   peer hardhat@"^2.26.0" from @nomicfoundation/hardhat-toolbox@6.1.0
+npm error   node_modules/@nomicfoundation/hardhat-toolbox
+npm error     dev @nomicfoundation/hardhat-toolbox@"^6.1.0" from the root project
+npm error   peer hardhat@"^2.26.0" from @nomicfoundation/hardhat-verify@2.1.3
+npm error   node_modules/@nomicfoundation/hardhat-verify
+npm error     peer @nomicfoundation/hardhat-verify@"^2.1.0" from @nomicfoundation/hardhat-toolbox@6.1.0
+npm error     node_modules/@nomicfoundation/hardhat-toolbox
+npm error       dev @nomicfoundation/hardhat-toolbox@"^6.1.0" from the root project
+npm error     dev @nomicfoundation/hardhat-verify@"^2.1.3" from the root project
+npm error   3 more (@nomiclabs/hardhat-ethers, ...)
+npm error
+npm error Could not resolve dependency:
+npm error peer hardhat@"^3.0.7" from @nomicfoundation/hardhat-ethers@4.0.3
+npm error node_modules/@nomicfoundation/hardhat-ethers
+npm error   dev @nomicfoundation/hardhat-ethers@"^4.0.3" from the root project
+npm error
+npm error Conflicting peer dependency: hardhat@3.0.17
+npm error node_modules/hardhat
+npm error   peer hardhat@"^3.0.7" from @nomicfoundation/hardhat-ethers@4.0.3
+npm error   node_modules/@nomicfoundation/hardhat-ethers
+npm error     dev @nomicfoundation/hardhat-ethers@"^4.0.3" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error C:\Users\IMAOBONG\AppData\Local\npm-cache\_logs\2025-12-04T08_39_23_200Z-eresolve-report.txt
+npm error A complete log of this run can be found in: C:\Users\IMAOBONG\AppData\Local\npm-cache\_logs\2025-12-04T08_39_23_200Z-debug-0.log

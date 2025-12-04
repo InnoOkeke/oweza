@@ -44,12 +44,9 @@ module.exports = function (api) {
       {
         test: (filename) => {
           if (!filename) return false;
-          const normalizedPath = filename.replace(/\\/g, '/');
-          return normalizedPath.includes('node_modules/react-native-qrcode-svg/src/') ||
-            normalizedPath.includes('node_modules/expo-barcode-generator/') ||
-            normalizedPath.includes('node_modules/expo-camera/');
+          return /node_modules[\\/](react-native-qrcode-svg|expo-barcode-generator|expo-camera|expo-barcode-scanner)/.test(filename);
         },
-        presets: ['module:metro-react-native-babel-preset'],
+        presets: ['babel-preset-expo'],
       },
     ],
   };

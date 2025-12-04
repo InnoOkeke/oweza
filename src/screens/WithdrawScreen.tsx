@@ -14,14 +14,17 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { WebView } from "react-native-webview";
+import * as LocalAuthentication from "expo-local-authentication";
 import { RootStackParamList } from "../navigation/RootNavigator";
 import { useTheme } from "../providers/ThemeProvider";
 import { useAuth } from "../providers/Web3AuthProvider";
 import { spacing, typography } from "../utils/theme";
 import { TextField } from "../components/TextField";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { getCusdBalance } from "../services/blockchain";
-import { useQuery } from "@tanstack/react-query";
+import { getCusdBalance, encodeCusdTransfer } from "../services/blockchain";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "../utils/toast";
+import { ToastModal } from "../components/ToastModal";
 import {
   getAvailableOfframpProviders,
   buildOfframpUrl,
@@ -30,6 +33,7 @@ import {
   type OfframpProvider,
 } from "../services/offramp";
 import { RampProvider } from "../services/ramp";
+import { CUSD_TOKEN_ADDRESS } from "../config/celo";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Withdraw">;
 
@@ -116,8 +120,10 @@ const fetchProviderQuote = async (
 
 export const WithdrawScreen: React.FC<Props> = ({ navigation, route }) => {
   const { colors } = useTheme();
-  const { profile } = useAuth();
+  const { profile, sendUserOperation } = useAuth();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const queryClient = useQueryClient();
+  const { toast, showToast, hideToast } = useToast();
 
   const withdrawType = route.params?.type || 'local';
   const isWalletWithdraw = withdrawType === 'wallet';
@@ -142,6 +148,9 @@ export const WithdrawScreen: React.FC<Props> = ({ navigation, route }) => {
   const [showWebView, setShowWebView] = useState(false);
   const [webViewUrl, setWebViewUrl] = useState<string | null>(null);
   const [webViewLoading, setWebViewLoading] = useState(true);
+  const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   // Query cUSD balance
   const { data: cusdBalance, isLoading: loadingBalance } = useQuery({
@@ -285,9 +294,124 @@ export const WithdrawScreen: React.FC<Props> = ({ navigation, route }) => {
       return;
     }
 
-    // TODO: Implement direct wallet transfer
-    console.log("Withdraw to wallet:", { walletAddress, amount });
-    Alert.alert("Coming Soon", "Direct wallet withdrawal will be implemented soon.");
+    if (!walletAddress.startsWith("0x") || walletAddress.length !== 42) {
+      Alert.alert("Invalid Address", "Please enter a valid Ethereum/Celo wallet address.");
+      return;
+    }
+
+    const withdrawAmount = parseFloat(amount);
+    if (cusdBalance !== undefined && withdrawAmount > cusdBalance) {
+      Alert.alert("Insufficient Balance", `You only have ${cusdBalance.toFixed(2)} cUSD available.`);
+      return;
+    }
+
+    setIsConfirmModalVisible(true);
+  };
+
+  const handleBiometricAuth = async () => {
+    setIsAuthenticating(true);
+
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      if (!hasHardware) {
+        Alert.alert(
+          "Confirm Transaction",
+          "Biometric authentication is not available. Do you want to proceed?",
+          [
+            { text: "Cancel", style: "cancel", onPress: () => setIsAuthenticating(false) },
+            { text: "Confirm", onPress: () => { executeWithdrawal(); } }
+          ]
+        );
+        setIsAuthenticating(false);
+        return;
+      }
+
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!isEnrolled) {
+        Alert.alert(
+          "Biometrics Not Set Up",
+          "Biometric authentication is not set up. Do you want to proceed?",
+          [
+            { text: "Cancel", style: "cancel", onPress: () => setIsAuthenticating(false) },
+            { text: "Confirm", onPress: () => { executeWithdrawal(); } }
+          ]
+        );
+        setIsAuthenticating(false);
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Confirm Withdrawal",
+        fallbackLabel: "Use Passcode",
+        disableDeviceFallback: false,
+      });
+
+      if (result.success) {
+        executeWithdrawal();
+      } else {
+        setIsAuthenticating(false);
+        showToast("Authentication cancelled", "info");
+      }
+    } catch (error) {
+      console.error("Biometric auth error:", error);
+      setIsAuthenticating(false);
+      showToast("Authentication failed. Please try again.", "error");
+    }
+  };
+
+  const executeWithdrawal = async () => {
+    if (!profile?.walletAddress) {
+      showToast("Wallet not connected", "error");
+      setIsAuthenticating(false);
+      return;
+    }
+
+    setIsWithdrawing(true);
+
+    try {
+      console.log("🔵 Starting withdrawal to:", walletAddress);
+      console.log("📍 Amount:", amount);
+
+      const callData = encodeCusdTransfer(
+        walletAddress as `0x${string}`,
+        parseFloat(amount)
+      );
+
+      console.log("📦 Encoded call data:", callData);
+
+      const result = await sendUserOperation([
+        {
+          to: CUSD_TOKEN_ADDRESS,
+          data: callData,
+          value: 0n,
+        }
+      ]);
+
+      console.log("✅ Withdrawal successful:", result);
+
+      await queryClient.invalidateQueries({ queryKey: ["cusdBalance", profile.walletAddress] });
+
+      showToast(`Successfully withdrawn ${amount} cUSD to ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`, "success");
+
+      setWalletAddress("");
+      setAmount("");
+      setIsConfirmModalVisible(false);
+
+      setTimeout(() => {
+        navigation.goBack();
+      }, 2000);
+    } catch (error) {
+      console.error("❌ Withdrawal error:", error);
+      showToast(error instanceof Error ? error.message : "Withdrawal failed", "error");
+    } finally {
+      setIsWithdrawing(false);
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleCancelConfirmation = () => {
+    setIsConfirmModalVisible(false);
+    setIsAuthenticating(false);
   };
 
   const closeWebView = () => {
@@ -624,337 +748,408 @@ export const WithdrawScreen: React.FC<Props> = ({ navigation, route }) => {
           disabled={!walletAddress || !amount || parseFloat(amount) <= 0}
         />
       </ScrollView>
+
+
+      {/* Confirmation Modal for Wallet Withdrawal */}
+      <Modal
+        visible={isConfirmModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={handleCancelConfirmation}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Confirm Withdrawal</Text>
+              <Pressable onPress={handleCancelConfirmation} style={styles.modalCloseButton}>
+                <Text style={[styles.modalCloseText, { color: colors.textPrimary }]}>✕</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.confirmationDetails}>
+              <View style={styles.confirmationRow}>
+                <Text style={[styles.confirmationLabel, { color: colors.textSecondary }]}>Sending to</Text>
+                <Text style={[styles.confirmationValue, { color: colors.textPrimary }]}>
+                  {walletAddress.slice(0, 10)}...{walletAddress.slice(-8)}
+                </Text>
+              </View>
+
+              <View style={styles.confirmationDivider} />
+
+              <View style={styles.confirmationRow}>
+                <Text style={[styles.confirmationLabel, { color: colors.textSecondary }]}>Amount</Text>
+                <Text style={[styles.confirmationAmount, { color: colors.textPrimary }]}>
+                  {amount} cUSD
+                </Text>
+              </View>
+
+              <View style={styles.confirmationDivider} />
+
+              <View style={styles.confirmationRow}>
+                <Text style={[styles.confirmationLabel, { color: colors.textSecondary }]}>Network</Text>
+                <Text style={[styles.confirmationValue, { color: colors.textPrimary }]}>Celo Sepolia</Text>
+              </View>
+
+              <View style={styles.confirmationRow}>
+                <Text style={[styles.confirmationLabel, { color: colors.textSecondary }]}>Gas Fee</Text>
+                <Text style={[styles.confirmationFree, { color: colors.success }]}>Free (Celo Paymaster)</Text>
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.cancelButton, { borderColor: colors.border, backgroundColor: colors.background }]}
+                onPress={handleCancelConfirmation}
+                disabled={isAuthenticating || isWithdrawing}
+              >
+                <Text style={[styles.cancelButtonText, { color: colors.textPrimary }]}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.confirmButton,
+                  { backgroundColor: colors.primary },
+                  (isAuthenticating || isWithdrawing) && styles.confirmButtonDisabled
+                ]}
+                onPress={handleBiometricAuth}
+                disabled={isAuthenticating || isWithdrawing}
+              >
+                {isAuthenticating || isWithdrawing ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.confirmButtonText}>🔒 Confirm</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.biometricHint, { color: colors.textSecondary }]}>
+              You'll be asked to authenticate with biometrics
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
+      <ToastModal
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onDismiss={hideToast}
+      />
     </SafeAreaView>
   );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xl * 2,
-  },
-  headerText: {
-    ...typography.subtitle,
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    ...typography.body,
-    fontSize: 15,
-    marginBottom: spacing.lg,
-    lineHeight: 22,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xl * 2,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    ...typography.body,
-  },
-  currencyCard: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: 16,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  currencyRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  balanceCard: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: 16,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  label: {
-    ...typography.caption,
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  valueText: {
-    ...typography.subtitle,
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  balanceAmount: {
-    ...typography.title,
-    fontSize: 32,
-    fontWeight: '700',
-    marginTop: spacing.xs,
-  },
-  fiatEquivalent: {
-    ...typography.body,
-    fontSize: 14,
-    marginTop: spacing.xs,
-  },
-  noProvidersCard: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: 16,
-    padding: spacing.lg,
-    marginVertical: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  noProvidersText: {
-    ...typography.body,
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  inputSection: {
-    marginBottom: spacing.lg,
-  },
-  amountInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.cardBackground,
-    borderRadius: 12,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  currencySymbolLarge: {
-    ...typography.title,
-    fontSize: 28,
-    marginRight: spacing.sm,
-  },
-  amountInput: {
-    flex: 1,
-    ...typography.title,
-    fontSize: 28,
-    paddingVertical: 0,
-  },
-  currencyLabel: {
-    ...typography.body,
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: spacing.sm,
-  },
-  conversionHint: {
-    ...typography.caption,
-    fontSize: 12,
-    marginTop: spacing.xs,
-    textAlign: 'center',
-  },
-  infoBox: {
-    backgroundColor: `${colors.primary}15`,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-  },
-  infoTitle: {
-    ...typography.body,
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
-  },
-  infoText: {
-    ...typography.caption,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  warningBox: {
-    backgroundColor: `${colors.error}15`,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.error,
-  },
-  warningText: {
-    ...typography.caption,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  modalBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: colors.cardBackground,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '85%',
-    paddingBottom: spacing.xl,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  modalTitle: {
-    ...typography.subtitle,
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  modalCloseButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCloseText: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  modalScroll: {
-    maxHeight: '70%',
-  },
-  modalSubtitle: {
-    ...typography.body,
-    fontSize: 14,
-    padding: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-    lineHeight: 20,
-  },
-  quoteLoadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xl * 2,
-  },
-  quoteLoadingText: {
-    marginTop: spacing.md,
-    ...typography.body,
-  },
-  providerQuoteCard: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    borderRadius: 16,
-    borderWidth: 2,
-    overflow: 'hidden',
-  },
-  providerQuoteHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-  },
-  providerQuoteIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  providerEmoji: {
-    fontSize: 24,
-  },
-  providerQuoteInfo: {
-    flex: 1,
-  },
-  providerName: {
-    ...typography.subtitle,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: spacing.xs / 2,
-  },
-  providerDescription: {
-    ...typography.caption,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  selectedBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selectedBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  quoteDetails: {
-    borderTopWidth: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  quoteRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.xs,
-  },
-  quoteLabel: {
-    ...typography.caption,
-    fontSize: 13,
-  },
-  quoteValue: {
-    ...typography.body,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  modalActions: {
-    padding: spacing.lg,
-    paddingTop: spacing.md,
-  },
-
-  // WebView Styles
-  webViewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  closeButton: {
-    padding: spacing.sm,
-  },
-  closeButtonText: {
-    ...typography.body,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  webViewTitle: {
-    ...typography.subtitle,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  webViewLoadingContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  webViewLoadingText: {
-    marginTop: spacing.md,
-    ...typography.body,
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.lg,
+      gap: spacing.md,
+    },
+    headerText: {
+      fontSize: 24,
+      fontWeight: "700",
+      marginBottom: spacing.xs,
+    },
+    subtitle: {
+      fontSize: 14,
+      marginBottom: spacing.md,
+    },
+    label: {
+      fontSize: 13,
+      fontWeight: "500",
+      marginBottom: spacing.xs,
+    },
+    balanceCard: {
+      backgroundColor: colors.cardBackground,
+      padding: spacing.lg,
+      borderRadius: 12,
+      marginBottom: spacing.md,
+    },
+    balanceAmount: {
+      fontSize: 28,
+      fontWeight: "700",
+    },
+    fiatEquivalent: {
+      fontSize: 14,
+      marginTop: spacing.xs,
+    },
+    currencyCard: {
+      backgroundColor: colors.cardBackground,
+      padding: spacing.lg,
+      borderRadius: 12,
+      marginBottom: spacing.md,
+    },
+    currencyRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    valueText: {
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    inputSection: {
+      marginBottom: spacing.md,
+    },
+    amountInputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.cardBackground,
+      borderRadius: 12,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    currencySymbolLarge: {
+      fontSize: 24,
+      fontWeight: "600",
+      marginRight: spacing.xs,
+    },
+    amountInput: {
+      flex: 1,
+      fontSize: 24,
+      fontWeight: "600",
+      paddingVertical: spacing.sm,
+    },
+    currencyLabel: {
+      fontSize: 16,
+      fontWeight: "500",
+    },
+    conversionHint: {
+      fontSize: 13,
+      marginTop: spacing.xs,
+    },
+    infoBox: {
+      backgroundColor: `${colors.primary}15`,
+      padding: spacing.md,
+      borderRadius: 12,
+      marginBottom: spacing.md,
+    },
+    infoText: {
+      fontSize: 13,
+    },
+    warningBox: {
+      backgroundColor: `${colors.error}15`,
+      padding: spacing.md,
+      borderRadius: 12,
+      marginBottom: spacing.md,
+    },
+    warningText: {
+      fontSize: 13,
+    },
+    loadingContainer: {
+      padding: spacing.xl,
+      alignItems: "center",
+    },
+    loadingText: {
+      marginTop: spacing.md,
+      fontSize: 14,
+    },
+    noProvidersCard: {
+      backgroundColor: colors.cardBackground,
+      padding: spacing.lg,
+      borderRadius: 12,
+      marginBottom: spacing.md,
+    },
+    noProvidersText: {
+      fontSize: 14,
+      textAlign: "center",
+    },
+    webViewHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    closeButton: {
+      padding: spacing.sm,
+    },
+    closeButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    webViewTitle: {
+      flex: 1,
+      textAlign: "center",
+      fontSize: 16,
+      fontWeight: "600",
+      marginRight: 40,
+    },
+    webViewLoadingContainer: {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: [{ translateX: -50 }, { translateY: -50 }],
+      alignItems: "center",
+    },
+    webViewLoadingText: {
+      marginTop: spacing.sm,
+      fontSize: 14,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "flex-end",
+    },
+    modalContent: {
+      backgroundColor: colors.background,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingBottom: spacing.xl,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+    },
+    modalCloseButton: {
+      padding: spacing.sm,
+    },
+    modalCloseText: {
+      fontSize: 20,
+    },
+    modalActions: {
+      flexDirection: "row",
+      gap: spacing.md,
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+    },
+    providerQuoteCard: {
+      padding: spacing.md,
+      borderRadius: 12,
+      borderWidth: 1,
+      marginBottom: spacing.sm,
+    },
+    providerQuoteHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    providerQuoteIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.cardBackground,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: spacing.md,
+    },
+    providerEmoji: {
+      fontSize: 24,
+    },
+    providerQuoteInfo: {
+      flex: 1,
+    },
+    providerName: {
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    providerDescription: {
+      fontSize: 12,
+      marginTop: 2,
+    },
+    selectedBadge: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    selectedBadgeText: {
+      color: "#FFFFFF",
+      fontSize: 14,
+      fontWeight: "700",
+    },
+    quoteDetails: {
+      marginTop: spacing.md,
+      paddingTop: spacing.md,
+      borderTopWidth: 1,
+    },
+    quoteRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: spacing.xs,
+    },
+    quoteLabel: {
+      fontSize: 13,
+    },
+    quoteValue: {
+      fontSize: 14,
+      fontWeight: "600",
+    },
+    confirmationDetails: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.lg,
+      gap: spacing.md,
+    },
+    confirmationRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: spacing.md,
+    },
+    confirmationLabel: {
+      fontSize: 14,
+      fontWeight: "500",
+    },
+    confirmationValue: {
+      fontSize: 15,
+      fontWeight: "500",
+      textAlign: "right",
+      flex: 1,
+    },
+    confirmationAmount: {
+      fontSize: 20,
+      fontWeight: "700",
+    },
+    confirmationFree: {
+      fontSize: 15,
+      fontWeight: "600",
+    },
+    confirmationDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: spacing.sm,
+    },
+    cancelButton: {
+      flex: 1,
+      paddingVertical: spacing.md,
+      borderRadius: 12,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    cancelButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    confirmButton: {
+      flex: 1,
+      paddingVertical: spacing.md,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    confirmButtonDisabled: {
+      opacity: 0.6,
+    },
+    confirmButtonText: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#FFFFFF",
+    },
+    biometricHint: {
+      fontSize: 12,
+      textAlign: "center",
+      marginTop: spacing.sm,
+      paddingHorizontal: spacing.lg,
+    },
+  });

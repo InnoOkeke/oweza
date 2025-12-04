@@ -51,6 +51,18 @@ export default ({ config }) => ({
   plugins: [
     "expo-localization",
     "expo-secure-store",
+    [
+      "expo-camera",
+      {
+        "cameraPermission": "Allow Oweza to access your camera to scan QR codes."
+      }
+    ],
+    [
+      "expo-location",
+      {
+        "locationAlwaysAndWhenInUsePermission": "Oweza uses your location to show region-specific payment providers like Paycrest for African users."
+      }
+    ],
     "./withProGuardRules",
     "./withKotlinJvmTarget"
   ],

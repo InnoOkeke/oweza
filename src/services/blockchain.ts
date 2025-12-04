@@ -213,10 +213,57 @@ export async function getCusdTransactions(
       toBlock: currentBlock,
     });
 
+    // Group sent logs by transaction hash to handle feeCurrency transactions
+    // (one tx can have multiple Transfer events - main transfer + gas fee payment)
+    const sentLogsByHash = new Map<string, typeof sentLogs>();
+    sentLogs.forEach((log) => {
+      const existing = sentLogsByHash.get(log.transactionHash) || [];
+      existing.push(log);
+      sentLogsByHash.set(log.transactionHash, existing);
+    });
 
-    // Process sent transactions
+    // For each transaction, find the MAIN transfer (largest value, not gas fee)
+    const mainSentLogs: typeof sentLogs = [];
+    sentLogsByHash.forEach((logs, _hash) => {
+      if (logs.length === 1) {
+        mainSentLogs.push(logs[0]);
+      } else {
+        // Multiple transfers in one tx - pick the one with largest value
+        // This filters out small gas fee payments
+        const mainLog = logs.reduce((best, current) => {
+          const bestValue = best.args.value || 0n;
+          const currentValue = current.args.value || 0n;
+          return currentValue > bestValue ? current : best;
+        });
+        mainSentLogs.push(mainLog);
+      }
+    });
+
+    // Same for received logs
+    const receivedLogsByHash = new Map<string, typeof receivedLogs>();
+    receivedLogs.forEach((log) => {
+      const existing = receivedLogsByHash.get(log.transactionHash) || [];
+      existing.push(log);
+      receivedLogsByHash.set(log.transactionHash, existing);
+    });
+
+    const mainReceivedLogs: typeof receivedLogs = [];
+    receivedLogsByHash.forEach((logs) => {
+      if (logs.length === 1) {
+        mainReceivedLogs.push(logs[0]);
+      } else {
+        const mainLog = logs.reduce((best, current) => {
+          const bestValue = best.args.value || 0n;
+          const currentValue = current.args.value || 0n;
+          return currentValue > bestValue ? current : best;
+        });
+        mainReceivedLogs.push(mainLog);
+      }
+    });
+
+    // Process sent transactions (now filtered to main transfers only)
     const sentTxs: BlockchainTransaction[] = await Promise.all(
-      sentLogs.map(async (log) => {
+      mainSentLogs.map(async (log) => {
         const block = await publicClient.getBlock({ blockNumber: log.blockNumber });
         return {
           hash: log.transactionHash,
@@ -230,9 +277,9 @@ export async function getCusdTransactions(
       })
     );
 
-    // Process received transactions
+    // Process received transactions (now filtered to main transfers only)
     const receivedTxs: BlockchainTransaction[] = await Promise.all(
-      receivedLogs.map(async (log) => {
+      mainReceivedLogs.map(async (log) => {
         const block = await publicClient.getBlock({ blockNumber: log.blockNumber });
         return {
           hash: log.transactionHash,
