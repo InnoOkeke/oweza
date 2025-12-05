@@ -104,6 +104,23 @@ router.patch('/', async (req: Request, res: Response) => {
       return res.status(200).json({ success: true, claimedCount });
     }
 
+    if (action === "claim-with-secret") {
+      const { secret, recipientEmail, recipientWalletAddress } = req.body as {
+        secret?: string;
+        recipientEmail?: string;
+        recipientWalletAddress?: string;
+      };
+      if (!secret || !recipientEmail || !recipientWalletAddress) {
+        return badRequest(res, "secret, recipientEmail, and recipientWalletAddress are required");
+      }
+      const claimTransactionHash = await pendingTransferService.claimWithSecret(
+        secret,
+        recipientEmail,
+        recipientWalletAddress
+      );
+      return res.status(200).json({ success: true, claimTransactionHash });
+    }
+
     return badRequest(res, `Unknown action: ${action}`);
   } catch (error) {
     console.error("❌ Pending transfers API error:", error);

@@ -70,7 +70,8 @@ class EmailNotificationService {
     senderEmail: string | undefined,
     amount: string,
     token: string,
-    transferId: string
+    transferId: string,
+    claimSecret?: string
   ): Promise<boolean> {
     const subject = `You received ${amount} ${token} from ${senderName}!`;
 
@@ -86,6 +87,8 @@ class EmailNotificationService {
             .content { background: #F8FAFC; padding: 30px; border-radius: 12px; margin: 20px 0; }
             .button { display: inline-block; background: #3A80F7; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
             .info-box { background: white; border-left: 4px solid #3A80F7; padding: 16px; margin: 20px 0; border-radius: 4px; }
+            .secret-box { background: #FEF3C7; border: 2px solid #F59E0B; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; }
+            .secret-code { font-family: 'Courier New', monospace; font-size: 20px; font-weight: bold; background: #374151; color: #10B981; padding: 12px 20px; border-radius: 6px; display: inline-block; margin: 10px 0; letter-spacing: 2px; }
             .footer { text-align: center; color: #64748B; font-size: 14px; margin-top: 40px; }
           </style>
         </head>
@@ -101,10 +104,18 @@ class EmailNotificationService {
               <h2>Hi there! 👋</h2>
               <p>${senderName}${senderEmail ? ` (${senderEmail})` : ""} sent you <strong>${amount} ${token}</strong> using Oweza.</p>
               
+              ${claimSecret ? `
+                <div class="secret-box">
+                  <h3 style="color: #92400E; margin-top: 0;">🔐 Your Claim Code</h3>
+                  <div class="secret-code">${claimSecret}</div>
+                  <p style="color: #78350F; margin-bottom: 0;"><strong>Important:</strong> Save this code! You'll need it to claim your funds after signing up.</p>
+                </div>
+              ` : ""}
+              
               <p>Create your free Oweza wallet to claim your funds:</p>
               
               <a href="${this.APP_URL}/claim/${transferId}" class="button">
-                Claim Your ${token}
+                Sign Up & Claim Your ${token}
               </a>
 
               <div class="info-box">
@@ -117,7 +128,7 @@ class EmailNotificationService {
               
               <ul>
                 <li>✅ Send to any email address</li>
-                <li>✅ Gasless transfers with Celo Fee Abstraction</li>
+                <li>✅ Gasless claims with Celo</li>
                 <li>✅ Secure Smart Wallet</li>
               </ul>
             </div>

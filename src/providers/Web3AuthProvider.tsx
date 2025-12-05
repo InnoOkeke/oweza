@@ -10,7 +10,7 @@ import * as Linking from 'expo-linking';
 import * as AuthSession from 'expo-auth-session';
 import { createWalletClient, createPublicClient, custom, http, parseEther, Address } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { celoSepolia } from 'viem/chains';
+import { celo } from 'viem/chains';
 import { ethers } from 'ethers';
 import { WEB3AUTH_CLIENT_ID, WEB3AUTH_CHAIN_CONFIG, WEB3AUTH_REDIRECT_URL, WEB3AUTH_NETWORK, getLoginProviders } from '../config/web3auth';
 import { CUSD_TOKEN_ADDRESS } from '../config/celo';
@@ -214,6 +214,20 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
                     photoUrl,
                 });
                 console.log('✅ User registered with backend');
+
+                // Auto-claim pending transfers for this email (gasless)
+                try {
+                    const { autoClaimPendingTransfers } = await import('../services/api');
+                    const claimedCount = await autoClaimPendingTransfers(userId, email);
+
+                    if (claimedCount > 0) {
+                        console.log(`✅ Auto-claimed ${claimedCount} pending transfer(s)`);
+                        // Silent auto-claim - user will see balance update on home screen
+                    }
+                } catch (claimError) {
+                    console.warn('⚠️ Auto-claim failed (user can claim manually later):', claimError);
+                    // Don't block login if auto-claim fails
+                }
             } catch (err) {
                 console.warn('⚠️ Backend registration failed:', err);
             }
@@ -392,7 +406,7 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
 
             const walletClient = createWalletClient({
                 account,
-                chain: celoSepolia,
+                chain: celo,
                 transport: http(),
             });
 
@@ -416,7 +430,7 @@ const AuthProviderContent: React.FC<React.PropsWithChildren> = ({ children }) =>
 
                 // Wait for confirmation before sending the next one
                 const publicClient = createPublicClient({
-                    chain: celoSepolia,
+                    chain: celo,
                     transport: http(),
                 });
 

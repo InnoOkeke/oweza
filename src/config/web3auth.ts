@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { celoSepolia } from 'viem/chains';
+import { celo } from 'viem/chains';
 
 // Read runtime expo config extras first (set in app.config.js), then fall back to hardcoded values.
 const expoExtra = (Constants?.expoConfig?.extra ?? {}) as any;
@@ -12,18 +12,18 @@ export const WEB3AUTH_CLIENT_ID =
 export const WEB3AUTH_REDIRECT_URL =
     expoExtra.web3authRedirectUrl || process.env.WEB3AUTH_REDIRECT_URL || 'oweza://auth';
 
-// Web3Auth network
-export const WEB3AUTH_NETWORK = expoExtra.web3authNetwork || process.env.WEB3AUTH_NETWORK || 'sapphire_devnet';
+// Web3Auth network - use mainnet for production
+export const WEB3AUTH_NETWORK = expoExtra.web3authNetwork || process.env.WEB3AUTH_NETWORK || 'sapphire_mainnet';
 
 // Chain configuration for Web3Auth (use expo extra overrides when available)
 export const WEB3AUTH_CHAIN_CONFIG = {
     chainNamespace: 'eip155' as const,
-    chainId: expoExtra.web3authChainId || '0x' + celoSepolia.id.toString(16),
-    rpcTarget: expoExtra.web3authChainRpc || celoSepolia.rpcUrls.default.http[0],
-    displayName: celoSepolia.name,
-    blockExplorer: celoSepolia.blockExplorers?.default.url || '',
-    ticker: celoSepolia.nativeCurrency.symbol,
-    tickerName: celoSepolia.nativeCurrency.name,
+    chainId: expoExtra.web3authChainId || '0x' + celo.id.toString(16),
+    rpcTarget: expoExtra.web3authChainRpc || celo.rpcUrls.default.http[0],
+    displayName: celo.name,
+    blockExplorer: celo.blockExplorers?.default.url || '',
+    ticker: celo.nativeCurrency.symbol,
+    tickerName: celo.nativeCurrency.name,
 };
 
 // Login providers based on platform

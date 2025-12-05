@@ -1,10 +1,10 @@
 # Oweza Mobile
 
-Oweza is a mobile application that lets users send cUSD to any email address using Reown AppKit wallet integration on Celo. Transfers use Celo's native gasless transactions with cUSD as the fee currency, and recipients without an account receive an email invitation to claim their funds after onboarding.
+Oweza is a mobile application that lets users send cUSD to any email address using web3auth wallet integration on Celo. Transfers use Celo's native gasless transactions with cUSD as the fee currency, and recipients without an account receive an email invitation to claim their funds after onboarding.
 
 ## Features
 
-- **Reown AppKit Authentication:** Secure wallet connection with WalletConnect v2
+- **web3auth AppKit Authentication:** Secure wallet connection with WalletConnect v2
 - **Email-Based Transfers:** Send cUSD to any email address, even non-registered users
 - **Pending Transfer System:** 
    - Shared on-chain escrow contract for unregistered recipients
@@ -51,7 +51,7 @@ The app includes a complete in-memory database implementation with TypeScript ty
    cp .env.example .env
    ```
 
-   Edit `.env` and add your reown credentials. See [Environment Configuration](#environment-configuration) below.
+   Edit `.env` and add your web3auth credentials. See [Environment Configuration](#environment-configuration) below.
 
 3. Start the Expo development server:
 
@@ -77,7 +77,7 @@ cp .env.example .env
 
 | Variable | Description |
 | --- | --- |
-| `REOWN_PROJECT_ID` | Reown (WalletConnect) project ID from cloud.reown.com |
+| `web3auth_PROJECT_ID` | web3auth (WalletConnect) project ID from web3auth.io |
 | `CELO_CHAIN_ID` | Celo network chain ID (11142220 for Sepolia testnet) |
 | `CELO_RPC_URL` | Celo RPC endpoint (https://forno.celo-sepolia.celo-testnet.org) |
 | `CUSD_TOKEN_ADDRESS` | cUSD token contract address on Celo Sepolia |
@@ -106,13 +106,6 @@ Choose one email provider and set its API key:
 | `MERCURYO_API_KEY` | Mercuryo API key (optional) |
 | `PAYANT_API_KEY` | Payant API key (optional) |
 | `PAYBIS_API_KEY` | Paybis API key (optional) |
-
-### App Configuration
-
-| Variable | Description |
-| --- | --- |
-| `APP_URL` | Production app URL (default: `https://oweza.vercel.app`) |
-| `SUPPORT_EMAIL` | Support email address (default: `support@oweza.io`) |
 
 ### Escrow & Security
 

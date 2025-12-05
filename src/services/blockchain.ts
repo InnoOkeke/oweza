@@ -1,10 +1,10 @@
 /**
- * Real blockchain operations for Celo Sepolia
+ * Real blockchain operations for Celo Mainnet
  * Uses viem for reading blockchain state
  */
 
 import { createPublicClient, http, encodeFunctionData, parseUnits } from "viem";
-import { celoSepolia } from "viem/chains";
+import { celo } from "viem/chains";
 import { CUSD_TOKEN_ADDRESS, CUSD_DECIMALS, CELO_RPC_URL } from "../config/celo";
 
 // ERC-20 ABI (minimal - just what we need)
@@ -73,7 +73,7 @@ export type BlockchainTransaction = {
 
 // Create public client for reading blockchain state
 const publicClient = createPublicClient({
-  chain: celoSepolia,
+  chain: celo,
   transport: http(CELO_RPC_URL),
   batch: {
     multicall: true,

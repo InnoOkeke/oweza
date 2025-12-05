@@ -168,34 +168,36 @@ class PendingTransferService {
 
     let escrowTransferId: string;
     let escrowTxHash: string;
-    let recipientHash: string;
+    let claimSecret: string | undefined;
+    let secretHash: string | undefined;
 
     // Check if escrow data is already provided by the client (mobile app executed the tx)
     if (validated.escrowTransferId && validated.escrowTxHash) {
       console.log("📱 Using escrow data from client (transaction already executed)");
       escrowTransferId = validated.escrowTransferId;
       escrowTxHash = validated.escrowTxHash;
-      // Compute recipient hash locally
-      const escrowDriver = await import("./EscrowService").then(m => m.escrowService);
-      // We need to compute the recipient hash the same way the driver does
-      // For now, we'll leave it empty and let it be filled later if needed
-      recipientHash = ""; // Will be synced from blockchain if needed
     } else {
-      // Create pooled escrow transfer on backend
-      console.log("🔒 Creating escrow transfer on backend");
+      // Create HTLC escrow transfer on backend with secret generation
+      console.log("🔒 Creating HTLC escrow transfer on backend");
       const escrowStart = Date.now();
-      const onchainReceipt = await escrowService.createOnchainTransfer({
+
+      // Use HTLC driver for secret-based gasless claims
+      const { htlcEscrowDriver } = await import("./server/HTLCEscrowDriver");
+      const htlcReceipt = await htlcEscrowDriver.createTransfer({
         recipientEmail: validated.recipientEmail,
         amount: validated.amount,
         decimals: validated.decimals,
         tokenAddress: validated.tokenAddress,
-        chain: validated.chain,
         expiry: Math.floor(expiresAt.getTime() / 1000),
       });
-      console.log(`⏱️ Escrow transfer creation: ${Date.now() - escrowStart}ms`);
-      escrowTransferId = onchainReceipt.transferId;
-      escrowTxHash = onchainReceipt.txHash;
-      recipientHash = onchainReceipt.recipientHash;
+
+      console.log(`⏱️ HTLC escrow transfer creation: ${Date.now() - escrowStart}ms`);
+      escrowTransferId = htlcReceipt.transferId;
+      escrowTxHash = htlcReceipt.userOpHash;
+      claimSecret = htlcReceipt.secret; // Store for gasless claims
+      secretHash = htlcReceipt.hashLock;
+
+      console.log(`🔐 Generated claim secret for transfer ${escrowTransferId}`);
     }
 
     const transfer: PendingTransfer = {
@@ -213,7 +215,8 @@ class PendingTransferService {
       escrowTransferId,
       escrowTxHash,
       escrowStatus: "pending",
-      recipientHash,
+      claimSecret, // HTLC secret for gasless claims
+      secretHash, // Hash lock stored in contract
       transactionHash: escrowTxHash,
       message: validated.message,
       createdAt: now.toISOString(),
@@ -241,7 +244,8 @@ class PendingTransferService {
             sender.email,
             validated.amount,
             validated.token,
-            transferId
+            transferId,
+            transfer.claimSecret // Include claim secret if available
           ),
           emailNotificationService.sendTransferConfirmation(
             sender.email,
@@ -422,6 +426,114 @@ class PendingTransferService {
         transfer.recipientEmail,
         transfer.amount,
         transfer.token
+      );
+    }
+
+    return claimTxHash;
+  }
+
+  /**
+   * Claim a pending transfer with secret code (gasless for recipient)
+   * Backend relayer pays gas fees
+   */
+  async claimWithSecret(
+    secret: string,
+    recipientEmail: string,
+    recipientWalletAddress: string
+  ): Promise<string> {
+    if (this.useRemoteApi) {
+      const result = await this.request<{ success: boolean; claimTransactionHash: string }>(
+        "/api/pending-transfers",
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            action: "claim-with-secret",
+            secret,
+            recipientEmail,
+            recipientWalletAddress,
+          }),
+        }
+      );
+      return result.claimTransactionHash;
+    }
+
+    console.log(`[PendingTransferService] Attempting gasless claim for: ${recipientEmail}`);
+
+    // Find all pending transfers for this email
+    const transfers = await mongoDatabase.getPendingTransfersByRecipientEmail(recipientEmail);
+    const pendingTransfers = transfers.filter(t => t.status === 'pending');
+
+    if (pendingTransfers.length === 0) {
+      throw new Error("No pending transfers found for this email");
+    }
+
+    // Try to find transfer matching the secret
+    let matchedTransfer: typeof pendingTransfers[0] | null = null;
+    for (const transfer of pendingTransfers) {
+      if (transfer.claimSecret === secret) {
+        matchedTransfer = transfer;
+        break;
+      }
+    }
+
+    if (!matchedTransfer) {
+      throw new Error("Invalid claim secret");
+    }
+
+    console.log(`[PendingTransferService] Found matching transfer: ${matchedTransfer.transferId}`);
+
+    // Check if expired
+    if (new Date(matchedTransfer.expiresAt) < new Date()) {
+      throw new Error("This transfer has expired");
+    }
+
+    const escrowTransferId = matchedTransfer.escrowTransferId;
+    if (!escrowTransferId) {
+      throw new Error("Transfer is not yet registered on escrow. Please contact support.");
+    }
+
+    if (!matchedTransfer.claimSecret) {
+      throw new Error("This transfer does not support secret-based claims.");
+    }
+
+    // Import HTLCEscrowDriver and execute gasless claim
+    console.log(`[PendingTransferService] Executing gasless HTLC claim to ${recipientWalletAddress}`);
+    let claimTxHash: string;
+    try {
+      const { htlcEscrowDriver } = await import("./server/HTLCEscrowDriver");
+      const secretHex = matchedTransfer.claimSecret as `0x${string}`;
+      const receipt = await htlcEscrowDriver.claimToRecipient(
+        escrowTransferId as `0x${string}`,
+        secretHex,
+        recipientWalletAddress as `0x${string}`
+      );
+      claimTxHash = receipt.userOpHash;
+      console.log(`[PendingTransferService] Gasless claim UserOp sent, hash: ${claimTxHash}`);
+    } catch (error) {
+      console.error(`[PendingTransferService] HTLC gasless claim failed:`, error);
+      throw new Error(`Failed to submit gasless claim: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+
+    // Update transfer status
+    console.log(`[PendingTransferService] Updating transfer status to claimed`);
+    await mongoDatabase.updatePendingTransfer(matchedTransfer.transferId, {
+      status: "claimed",
+      claimedAt: new Date().toISOString(),
+      claimTransactionHash: claimTxHash,
+      escrowStatus: "claimed",
+      escrowTxHash: claimTxHash,
+      recipientWallet: recipientWalletAddress,
+    });
+
+    // Notify sender
+    const sender = await userDirectoryService.getUserProfile(matchedTransfer.senderUserId);
+    if (sender) {
+      await emailNotificationService.sendPendingTransferClaimed(
+        sender.email,
+        sender.displayName || sender.email,
+        matchedTransfer.recipientEmail,
+        matchedTransfer.amount,
+        matchedTransfer.token
       );
     }
 

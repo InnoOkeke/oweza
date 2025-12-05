@@ -1,5 +1,5 @@
 import { createWalletClient, createPublicClient, http, parseEther, Address } from 'viem';
-import { celoSepolia } from 'viem/chains';
+import { celo } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { CUSD_TOKEN_ADDRESS } from '../config/celo';
 
@@ -21,7 +21,7 @@ export async function sendGaslessTransaction(
 
     const walletClient = createWalletClient({
         account,
-        chain: celoSepolia,
+        chain: celo,
         transport: http(),
     });
 
@@ -44,7 +44,7 @@ export async function sendGaslessTransaction(
  */
 export async function waitForTransaction(hash: `0x${string}`) {
     const publicClient = createPublicClient({
-        chain: celoSepolia,
+        chain: celo,
         transport: http(),
     });
 
@@ -58,7 +58,7 @@ export async function waitForTransaction(hash: `0x${string}`) {
  */
 export async function getCUSDBalance(address: Address): Promise<bigint> {
     const publicClient = createPublicClient({
-        chain: celoSepolia,
+        chain: celo,
         transport: http(),
     });
 

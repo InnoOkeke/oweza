@@ -52,6 +52,10 @@ export type PendingTransfer = {
   recipientWallet?: string;
   lastChainSyncAt?: string;
 
+  // HTLC escrow metadata (for secret-based claims)
+  claimSecret?: string; // Cryptographic secret for gasless claims (encrypted in storage)
+  secretHash?: string; // keccak256(secret) stored in HTLC contract
+
   // Metadata
   message?: string;
   createdAt: string;
@@ -223,6 +227,10 @@ export type CryptoGift = {
   // Escrow (for unclaimed gifts) - Legacy
   escrowAddress?: string;
   escrowPrivateKeyEncrypted?: string;
+
+  // HTLC escrow metadata (for secret-based claims)
+  claimSecret?: string; // Cryptographic secret for gasless claims
+  secretHash?: string; // keccak256(secret) stored in HTLC contract
 
   // Status
   status: GiftStatus;
